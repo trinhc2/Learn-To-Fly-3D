@@ -1,5 +1,8 @@
 #include <iostream>
 #include "mathLib3D.h"
+#include "coin.h"
+#include "rocket.h"
+
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
 #  include <OpenGL/gl.h>
@@ -11,51 +14,71 @@
 #  include <GL/freeglut.h>
 
 #endif
-
-float forwardDistance = 0;
 bool cameraToggle = false;
 
-class Rocket {
-public:
-    Point3D position;
-    float angle;
-    float fuel;
-    float zOffset;
-    int coins;
-    Rocket();
-    void update();
-};
-
-Rocket::Rocket() {
-    position = Point3D(0.5, -5.45, zOffset);
-    angle = 0;
-    fuel = 100;
-    coins = 0;
-    zOffset = 0;
-}
-
-void Rocket::update() {
-    //While the rocket has fuel move forward and decrement fuel gauge
-    if (fuel > 0) {
-        forwardDistance +=0.01;
-        fuel -= 0.1;
-    }
-    else {
-        fuel = 0;
-    }
-    position.mZ = zOffset;
-}
-
 Rocket rocket = Rocket();
+CoinSystem coinSystem = CoinSystem();
 
+/**
+ * Checks if the rocket is within a range of coordinates
+ */ 
+bool inRangeX(int high, int low, Rocket r){
+    return (low <= r.position.mX && r.position.mX <= high);
+}
+
+bool inRangeZ(int high, int low, Rocket r){
+    return (low <= r.position.mZ && r.position.mZ <= high);
+}
+
+bool inRangeY(int high, int low, Rocket r){
+    return (low <= r.position.mY + r.forwardDistance && r.position.mY + r.forwardDistance <= high);
+}
+
+/**
+ * Checks if the rocket has collided with the coins
+ * 
+ * @rocket reference to our rocket object
+ * @v reference to our list of coins from CoinSystem
+ */
+void checkCoinCollision(Rocket& rocket, std::vector<Coin>& v) {
+    for (Coin& c: v) {
+        //The boundaries are off but intended behaviour works
+        if (inRangeY(c.position.mY+0.9, c.position.mY-0.9, rocket) && inRangeZ(c.position.mZ+0.9, c.position.mZ-0.9, rocket))  {
+            //if collision: set coin as collected (see Coinsystem::update) and increments earned coins
+            c.collected = true;
+            rocket.coins += 100;
+        }
+    }
+}
+
+/**
+ * Draws the rocket to screen
+ */
 void drawRocket(Rocket rocket){
     glColor3f(1,0,0);
     glPushMatrix();
-    glTranslatef(rocket.position.mX, rocket.position.mY + forwardDistance, rocket.position.mZ);
+    //Place the rocket at its position + how much it has traveled
+    glTranslatef(rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ);
+    //Rotate the rocket if it has been turning
     glRotatef(rocket.angle, 0,1,0);
+    //Scales the rocket size down, scales can be updated in future
     glScalef(0.3,0.3,0.3);
 	glutSolidCube(1);
 	glPopMatrix();
+}
+
+/**
+ * Draws the coins to the screen
+ */
+void drawCoins(CoinSystem coinSystem){
+    for (std::size_t i=0; i<coinSystem.v.size(); i++) {
+        glColor3f(1,1,0);
+        glPushMatrix();
+        glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
+        glRotatef(coinSystem.rotation, 1,0,0);
+        glutSolidCube(1);
+        glPopMatrix();
+    }
 }
 
 void display(void)
@@ -66,19 +89,21 @@ void display(void)
 
     //For testing
     if (cameraToggle) {
-        gluLookAt(7,7,7, rocket.position.mX, rocket.position.mY + forwardDistance, rocket.position.mZ, 0,1,0);
+        gluLookAt(7,7,7, rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, 0,1,0);
     }
     else {
-        gluLookAt(2, -8 + forwardDistance, 0, 0,forwardDistance,0, 1,0,0);
+        gluLookAt(2, -8 + rocket.forwardDistance, 0, 0, rocket.forwardDistance,0, 1,0,0);
     }
 
     glColor3f(0,0,1);
 
+    //Draws the ground plane
 	glPushMatrix();
 	glScalef(0.1, 10, 10);
 	glutSolidCube(1);
 	glPopMatrix();
 
+    //Draws random cube at the origin
     glColor3f(0,1,0);
     glPushMatrix();
     glTranslatef(0.4,0,0);
@@ -87,6 +112,7 @@ void display(void)
 	glPopMatrix();
 
     drawRocket(rocket);
+    drawCoins(coinSystem);
 
     //Display Text
     //https://stackoverflow.com/questions/18847109/displaying-fixed-location-2d-text-in-a-3d-opengl-world-using-glut
@@ -113,7 +139,7 @@ void display(void)
     }
     glPushMatrix();
 
-    //Display Coins
+    //Display amount of coins
     glRasterPos2i(10, 580);
     std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
     glColor3f(1, 1, 1);
@@ -143,6 +169,7 @@ void keyboard(unsigned char key, int x, int y){
             exit (0);
             break;
         case 'a':
+        //Turn the rocket left and rotates
             if (rocket.zOffset < 2) {
                 rocket.zOffset += 0.1;
                 rocket.angle -=1;
@@ -150,6 +177,7 @@ void keyboard(unsigned char key, int x, int y){
             }
             break;
         case 'd':
+        //Turn the rocket right and rotates
             if (rocket.zOffset > -2) {
                 rocket.zOffset -= 0.1;
                 rocket.angle +=1;
@@ -165,6 +193,8 @@ void keyboard(unsigned char key, int x, int y){
 
 void FPS(int val) {
     rocket.update();
+    coinSystem.update();
+    checkCoinCollision(rocket, coinSystem.v);
 
     glutPostRedisplay();
     glutTimerFunc(17, FPS, 0);
@@ -176,7 +206,7 @@ void init(void)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	//glOrtho(-1, 1, -1, 1, -20, 20);
-	gluPerspective(60, 1, 1, 20);
+	gluPerspective(70, 1, 1, 20);
 }
 
 /* main function - program entry point */
