@@ -148,7 +148,7 @@ void display(void) {
 	if (cameraToggle) {
 	  gluLookAt(7, 7, 7, rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, 0, 1, 0);
 	} else {
-	  gluLookAt(2, -8 + rocket.forwardDistance, 0, 0, rocket.forwardDistance, 0, 1, 0, 0);
+	  gluLookAt(2, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
 	}
 
 	glColor3f(0, 0, 1);
@@ -245,7 +245,7 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	  case 'a':
 		//Turn the rocket left and rotates
-		if (rocket.zOffset < 2) {
+		if (rocket.zOffset < 3) {
 		  rocket.zOffset += 0.2;
 		  rocket.angle -= 1;
 
@@ -253,7 +253,7 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	  case 'd':
 		//Turn the rocket right and rotates
-		if (rocket.zOffset > -2) {
+		if (rocket.zOffset > -3) {
 		  rocket.zOffset -= 0.2;
 		  rocket.angle += 1;
 
