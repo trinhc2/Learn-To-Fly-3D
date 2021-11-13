@@ -56,7 +56,7 @@ void drawRocket(Rocket rocket) {
   //Place the rocket at its position + how much it has traveled
   glTranslatef(rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ);
   //Rotate the rocket if it has been turning
-  glRotatef(rocket.angle, 0, 1, 0);
+  glRotatef(rocket.angle, -1, 1, 0);
   //Scales the rocket size down, scales can be updated in future
   glScalef(0.3, 0.3, 0.3);
   glutSolidCube(1);
@@ -112,7 +112,7 @@ void display(void) {
 
 	//For testing
 	if (cameraToggle) {
-	  gluLookAt(7, 7, 7, rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, 0, 1, 0);
+	  gluLookAt(7, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, 0, 1, 0);
 	} else {
 	  gluLookAt(2, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
 	}

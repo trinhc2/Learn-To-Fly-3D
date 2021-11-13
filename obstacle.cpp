@@ -29,5 +29,9 @@ void ObstacleSystem::update(Rocket& r) {
 	    v.erase(v.begin() + i);
       r.fuel -= r.collisionFuelPenalty;
 	  }
+    //If obstacle is behind rocket, then we don't need to keep track of it anymore
+    else if (v.at(i).position.mY + 2< r.position.mY + r.forwardDistance){
+      v.erase(v.begin() + i);
+    }    
   }
 }
