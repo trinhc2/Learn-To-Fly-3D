@@ -1,4 +1,6 @@
+#include "mathLib2D.h"
 #include "mathLib3D.h"
+#include <vector>
 
 class Rocket {
 public:
@@ -11,4 +13,12 @@ public:
     int coins; //coins gathered
     Rocket();
     void update();
+
+    std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
+    std::vector<Point3D> temp_vertices;
+    std::vector<Point2D> temp_uvs;
+    std::vector<Vec3D> temp_normals;
+    
+    bool loadOBJ(const char* path);
+
 };

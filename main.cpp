@@ -59,6 +59,31 @@ void checkCoinCollision(Rocket& rocket, std::vector<Coin>& v) {
     }
 }
 
+void displayRocket() {
+    glPushMatrix();
+        glColor3f(1,0,0);
+        glBegin(GL_TRIANGLES);
+        int size = rocket.vertexIndices.size();
+        for (int i = 0; i < size; i++) {
+            // Normal
+            Vec3D v = rocket.temp_normals[rocket.normalIndices[i]-1];
+            glNormal3f(v.mX, v.mY, v.mZ);
+                        
+            // Texture
+            Point2D t = rocket.temp_uvs[rocket.uvIndices[i]-1];
+            glTexCoord2f(t.mX, t.mY);
+            // cout << t.mX << endl;
+            
+            // Vertex
+            Point3D m = rocket.temp_vertices[rocket.vertexIndices[i]-1];
+            glVertex3f(m.mX, m.mY, m.mZ);
+            std::cout << m.mX << " " << m.mY << " " << m.mZ << std::endl;
+        }
+        glEnd();
+        glutSolidCube(1);
+    glPopMatrix();
+}
+
 /**
  * Draws the rocket to screen
  */
@@ -71,7 +96,8 @@ void drawRocket(Rocket rocket){
     glRotatef(rocket.angle, 0,1,0);
     //Scales the rocket size down, scales can be updated in future
     glScalef(0.3,0.3,0.3);
-	glutSolidCube(1);
+	// glutSolidCube(1);
+    displayRocket();
 	glPopMatrix();
 }
 
@@ -100,6 +126,7 @@ void drawText(std::string text) {
         glutBitmapCharacter(font, c);
     }
 }
+
 
 void display(void)
 {
@@ -285,6 +312,9 @@ void init(void)
 	glLoadIdentity();
 	//glOrtho(-1, 1, -1, 1, -20, 20);
     gluPerspective(70, 1, 1, 20);
+    // Load the rocket -- hardcoding the location rn
+    std::cout << "loaded rocket" << std::endl;
+    rocket.loadOBJ("./assets/rocket/rocket.obj");
 }
 
 /* main function - program entry point */

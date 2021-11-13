@@ -8,7 +8,9 @@ Point3D::Point3D(float inX, float inY, float inZ){
 }
 
 Point3D::Point3D(){
-
+    this->mX = 0;
+    this->mY = 0;
+    this->mZ = 0;
 }
 
 float Point3D::distanceTo(Point3D other){
@@ -26,13 +28,15 @@ float Point3D::fastDistanceTo(Point3D other){
 }
 
 Vec3D::Vec3D(float inX, float inY, float inZ){
-    mX = inX;
-    mY = inY;
-    mZ = inZ;
+    this->mX = inX;
+    this->mY = inY;
+    this->mZ = inZ;
 }
 
 Vec3D::Vec3D(){
-
+    this->mX = 0;
+    this->mY = 0;
+    this->mZ = 0;
 }
 
 float Vec3D::length() {
