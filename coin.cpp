@@ -15,17 +15,16 @@ CoinSystem::CoinSystem() {
 }
 
 void CoinSystem::update(void) {
-    //Continuous rotation
-    if (rotation > 360){
-        rotation = 0;
-    }
-    else {
-        rotation += 1;
-    }
-    //If coin is collected then remove it from the game (the vector)
-    for (std::size_t i=0; i<v.size(); i++) {
-        if (v.at(i).collected) {
-            v.erase(v.begin() + i);
-        }
-    }
+  //Continuous rotation
+  if (rotation > 360) {
+	rotation = 0;
+  } else {
+	rotation += 1;
+  }
+  //If coin is collected then remove it from the game (the vector)
+  for (std::size_t i = 0; i < v.size(); i++) {
+	if (v.at(i).collected) {
+	  v.erase(v.begin() + i);
+	}
+  }
 }

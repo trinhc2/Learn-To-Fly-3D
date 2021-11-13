@@ -63,6 +63,22 @@ void checkCoinCollision(Rocket &rocket, std::vector<Coin> &v) {
 }
 
 /**
+ * Checks if the rocket has collided with the obstacles
+ *
+ * @rocket reference to our rocket object
+ * @v reference to our list of obstacles from ObstacleSystem
+ */
+void checkObstacleCollision(Rocket &rocket, std::vector<Obstacle> &v) {
+  for (Obstacle &o: v) {
+	if (inRangeY(o.position.mY + 0.9, o.position.mY - 0.9, rocket)
+		&& inRangeZ(o.position.mZ + 0.9, o.position.mZ - 0.9, rocket)) {
+	  o.destroyed = true;
+	  rocket.fuel -= rocket.collisionFuelPenalty;
+	}
+  }
+}
+
+/**
  * Draws the rocket to screen
  */
 void drawRocket(Rocket rocket) {
@@ -268,7 +284,9 @@ void FPS(int val) {
   if (screen == game) {
 	rocket.update();
 	coinSystem.update();
+	obstacleSystem.update();
 	checkCoinCollision(rocket, coinSystem.v);
+	checkObstacleCollision(rocket, obstacleSystem.v);
 	if (rocket.fuel <= 0) {
 	  screen = menu;
 	}
