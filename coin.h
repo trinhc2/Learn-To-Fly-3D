@@ -1,10 +1,13 @@
+#ifndef COIN_H
+#define COIN_H
+
 #include "mathLib3D.h"
 #include <vector>
+#include "rocket.h"
 
 class Coin {
 public:
     Point3D position;
-    bool collected;
     Coin(float x, float y, float z);
 };
 
@@ -13,5 +16,7 @@ public:
     std::vector<Coin> v;
     float rotation; //all coins rotate the same
     CoinSystem();
-    void update();
+    void update(Rocket& r);
 };
+
+#endif

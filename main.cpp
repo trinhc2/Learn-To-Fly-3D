@@ -35,50 +35,16 @@ float maxForwardingDistance = 0; // Used to keep track of player score
 /**
  * Checks if the rocket is within a range of coordinates
  */
-bool inRangeX(int high, int low, Rocket r) {
+bool inRangeX(float high, float low, Rocket r) {
   return (low <= r.position.mX && r.position.mX <= high);
 }
 
-bool inRangeZ(int high, int low, Rocket r) {
+bool inRangeZ(float high, float low, Rocket r) {
   return (low <= r.position.mZ && r.position.mZ <= high);
 }
 
-bool inRangeY(int high, int low, Rocket r) {
+bool inRangeY(float high, float low, Rocket r) {
   return (low <= r.position.mY + r.forwardDistance && r.position.mY + r.forwardDistance <= high);
-}
-
-/**
- * Checks if the rocket has collided with the coins
- * 
- * @rocket reference to our rocket object
- * @v reference to our list of coins from CoinSystem
- */
-void checkCoinCollision(Rocket &rocket, std::vector<Coin> &v) {
-  for (Coin &c: v) {
-	//The boundaries are off but intended behaviour works
-	if (inRangeY(c.position.mY + 0.9, c.position.mY - 0.9, rocket)
-		&& inRangeZ(c.position.mZ + 0.9, c.position.mZ - 0.9, rocket)) {
-	  //if collision: set coin as collected (see Coinsystem::update) and increments earned coins
-	  c.collected = true;
-	  rocket.coins += 100;
-	}
-  }
-}
-
-/**
- * Checks if the rocket has collided with the obstacles
- *
- * @rocket reference to our rocket object
- * @v reference to our list of obstacles from ObstacleSystem
- */
-void checkObstacleCollision(Rocket &rocket, std::vector<Obstacle> &v) {
-  for (Obstacle &o: v) {
-	if (inRangeY(o.position.mY + 0.9, o.position.mY - 0.9, rocket)
-		&& inRangeZ(o.position.mZ + 0.9, o.position.mZ - 0.9, rocket)) {
-	  o.destroyed = true;
-	  rocket.fuel -= rocket.collisionFuelPenalty;
-	}
-  }
 }
 
 /**
@@ -290,10 +256,8 @@ void FPS(int val) {
   if (screen == game) {
 	rocket.update();
 	maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
-	coinSystem.update();
-	obstacleSystem.update();
-	checkCoinCollision(rocket, coinSystem.v);
-	checkObstacleCollision(rocket, obstacleSystem.v);
+	coinSystem.update(rocket);
+	obstacleSystem.update(rocket);
 	if (rocket.fuel <= 0) {
 	  screen = menu;
 	}

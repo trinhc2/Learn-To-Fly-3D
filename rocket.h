@@ -1,3 +1,6 @@
+#ifndef ROCKET_H
+#define ROCKET_H
+
 #include "mathLib3D.h"
 
 class Rocket {
@@ -15,3 +18,5 @@ class Rocket {
   Rocket();
   void update();
 };
+
+#endif

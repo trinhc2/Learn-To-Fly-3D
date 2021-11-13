@@ -1,16 +1,16 @@
 #include "obstacle.h"
 #include "mathLib3D.h"
+#include <stdlib.h>
+#include "main.h"
 
 Obstacle::Obstacle() {
   this->position = Point3D();
   this->size = 1;
-  this->destroyed = false;
 }
 
 Obstacle::Obstacle(Point3D position, int size) {
   this->position = position;
   this->size = size;
-  this->destroyed = false;
 }
 
 ObstacleSystem::ObstacleSystem() {
@@ -20,11 +20,14 @@ ObstacleSystem::ObstacleSystem() {
   }
 }
 
-void ObstacleSystem::update(void) {
+void ObstacleSystem::update(Rocket& r) {
   //If obstacle is destroyed then remove it from the game (the vector)
   for (std::size_t i = 0; i < v.size(); i++) {
-	if (v.at(i).destroyed) {
-	  v.erase(v.begin() + i);
-	}
+    if (inRangeY(v.at(i).position.mY + 0.65, v.at(i).position.mY - 0.65, r)
+		  && inRangeZ(v.at(i).position.mZ + 0.65, v.at(i).position.mZ - 0.65, r)) {
+	    //if collision: remove coin from game and increment coins total
+	    v.erase(v.begin() + i);
+      r.fuel -= r.collisionFuelPenalty;
+	  }
   }
 }
