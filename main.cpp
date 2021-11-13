@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include "mathLib3D.h"
 #include "coin.h"
 #include "rocket.h"
@@ -28,6 +29,8 @@ void *font = GLUT_BITMAP_HELVETICA_18; //Font which is used for glutBitMapCharac
 Rocket rocket = Rocket();
 CoinSystem coinSystem = CoinSystem();
 ObstacleSystem obstacleSystem = ObstacleSystem();
+
+float maxForwardingDistance = 0; // Used to keep track of player score
 
 /**
  * Checks if the rocket is within a range of coordinates
@@ -214,6 +217,9 @@ void display(void) {
 	std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
 	drawText(coinDisplay);
 
+	std::string scoreDisplay = "    Max Score: " + std::to_string(maxForwardingDistance);
+	drawText(scoreDisplay);
+
 	glRasterPos2i(220, 10);
 	drawText("Press Space Bar to play");
 
@@ -283,6 +289,7 @@ void keyboard(unsigned char key, int x, int y) {
 void FPS(int val) {
   if (screen == game) {
 	rocket.update();
+	maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
 	coinSystem.update();
 	obstacleSystem.update();
 	checkCoinCollision(rocket, coinSystem.v);
