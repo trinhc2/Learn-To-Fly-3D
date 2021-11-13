@@ -250,7 +250,7 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	  case 32: //space bar
 		rocket.forwardDistance = 0;
-		rocket.fuel += rocket.fuelUpgrades;
+		rocket.fuel += rocket.initialFuel + rocket.fuelUpgrades;
 		screen = game;
 		break;
 	  case '1':
@@ -269,7 +269,7 @@ void FPS(int val) {
 	rocket.update();
 	coinSystem.update();
 	checkCoinCollision(rocket, coinSystem.v);
-	if (rocket.fuel < 0) {
+	if (rocket.fuel <= 0) {
 	  screen = menu;
 	}
   } else if (screen == menu) {
