@@ -9,13 +9,14 @@ Rocket::Rocket() {
     coins = 100;
     zOffset = 0;
     forwardDistance = 0;
+	forwardSpeed = 0.3;
 }
 
 void Rocket::update() {
     //While the rocket has fuel move forward and decrement fuel gauge
     if (fuel > 0) {
-        forwardDistance +=0.01;
-        fuel -= 0.1;
+        forwardDistance += forwardSpeed;
+        fuel -= forwardSpeed;
     }
     else {
         fuel = 0;

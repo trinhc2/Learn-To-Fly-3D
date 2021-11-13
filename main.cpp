@@ -136,7 +136,8 @@ void display(void) {
 
 	//Draws the ground plane
 	glPushMatrix();
-	glScalef(0.1, 10, 10);
+	// make y arbitrarily high to simulate an infinite long road ahead
+	glScalef(0.1, 10000, 10);
 	glutSolidCube(1);
 	glPopMatrix();
 
@@ -223,7 +224,7 @@ void keyboard(unsigned char key, int x, int y) {
 	  case 'a':
 		//Turn the rocket left and rotates
 		if (rocket.zOffset < 2) {
-		  rocket.zOffset += 0.1;
+		  rocket.zOffset += 0.2;
 		  rocket.angle -= 1;
 
 		}
@@ -231,7 +232,7 @@ void keyboard(unsigned char key, int x, int y) {
 	  case 'd':
 		//Turn the rocket right and rotates
 		if (rocket.zOffset > -2) {
-		  rocket.zOffset -= 0.1;
+		  rocket.zOffset -= 0.2;
 		  rocket.angle += 1;
 
 		}

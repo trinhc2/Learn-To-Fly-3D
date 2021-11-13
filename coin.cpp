@@ -8,9 +8,10 @@ Coin::Coin(float x, float y, float z) {
 }
 
 CoinSystem::CoinSystem() {
-    //Hardcoded sample coins
-    v.push_back(Coin(0.4,1,1));
-    v.push_back(Coin(0.4,-2, -1));
+  // generate random coins acorss the map
+  for(int i=0; i<50; i++) {
+	v.push_back(Coin(0.5, (float)rand() / (RAND_MAX) * 1000, (float)rand() / (RAND_MAX) * 10 - 5));
+  }
 }
 
 void CoinSystem::update(void) {
