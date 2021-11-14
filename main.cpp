@@ -5,6 +5,7 @@
 #include "rocket.h"
 #include "obstacle.h"
 #include "particle.h"
+#include <string>
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -54,6 +55,42 @@ float randomFloat(float x) {
     return static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/x));
 }
 
+// Display obj
+void displayObj(std::string name) {
+    std::vector<Point3D> out_vertices;
+    std::vector<Vec3D> out_normals;
+    std::vector<Point2D> out_uvs;
+
+    if (name.compare("rocket") == 0) {
+        std::cout << "rocket" << std::endl;
+        out_vertices = rocket.out_vertices;
+        out_normals = rocket.out_normals;
+        out_uvs = rocket.out_uvs;
+    } else if (name.compare("coin") == 0) {
+        std::cout << "coin" << std::endl;
+        out_vertices = coinSystem.out_vertices;
+        out_normals = coinSystem.out_normals;
+        out_uvs = coinSystem.out_uvs;
+    }
+    glPushMatrix();
+
+        glColor3f(1,0,0);
+        glBegin(GL_TRIANGLES);
+        // Draw vertices, normals, and textures
+        for (Point3D vertex: out_vertices) {
+            glVertex3f(vertex.mX, vertex.mY, vertex.mZ);
+        }
+        for (Vec3D normal: out_normals) {
+            glNormal3f(normal.mX, normal.mY, normal.mZ);
+        }
+        for (Point2D texture: out_uvs) {
+            glTexCoord2f(texture.mX, texture.mY);
+        }
+        glEnd();
+
+    glPopMatrix();
+}
+
 /**
  * Draws the rocket to screen
  */
@@ -66,7 +103,8 @@ void drawRocket(Rocket rocket) {
   glRotatef(rocket.angle, -1, 1, 0);
   //Scales the rocket size down, scales can be updated in future
   glScalef(0.3, 0.3, 0.3);
-  glutSolidCube(1);
+  std::cout << "drawingrocket" << std::endl;
+  displayObj("rocket");
   glPopMatrix();
 }
 
@@ -79,7 +117,7 @@ void drawCoins(CoinSystem coinSystem) {
 	glPushMatrix();
 	glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
 	glRotatef(coinSystem.rotation, 1, 0, 0);
-	glutSolidCube(1);
+    displayObj("coin");
 	glPopMatrix();
   }
 }
@@ -310,6 +348,8 @@ void init(void) {
   glLoadIdentity();
   //glOrtho(-1, 1, -1, 1, -20, 20);
   gluPerspective(70, 1, 1, 20);
+  rocket.loadOBJ("./assets/rocket/testrocket.obj");
+  coinSystem.loadOBJ("./assets/rocket/testcoin.obj");
 }
 
 /* main function - program entry point */
