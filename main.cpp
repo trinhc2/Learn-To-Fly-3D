@@ -62,12 +62,10 @@ void displayObj(std::string name) {
     std::vector<Point2D> out_uvs;
 
     if (name.compare("rocket") == 0) {
-        std::cout << "rocket" << std::endl;
         out_vertices = rocket.out_vertices;
         out_normals = rocket.out_normals;
         out_uvs = rocket.out_uvs;
     } else if (name.compare("coin") == 0) {
-        std::cout << "coin" << std::endl;
         out_vertices = coinSystem.out_vertices;
         out_normals = coinSystem.out_normals;
         out_uvs = coinSystem.out_uvs;
@@ -348,8 +346,8 @@ void init(void) {
   glLoadIdentity();
   //glOrtho(-1, 1, -1, 1, -20, 20);
   gluPerspective(70, 1, 1, 20);
-  rocket.loadOBJ("./assets/rocket/testrocket.obj");
-  coinSystem.loadOBJ("./assets/rocket/testcoin.obj");
+  rocket.loadOBJ("./assets/rocket/rocket.obj");
+  coinSystem.loadOBJ("./assets/coin/coin.obj");
 }
 
 /* main function - program entry point */
