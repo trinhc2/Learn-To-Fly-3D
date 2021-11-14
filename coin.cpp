@@ -10,7 +10,8 @@ Coin::Coin(float x, float y, float z) {
 CoinSystem::CoinSystem() {
   // generate random coins acorss the map
   for(int i=0; i<50; i++) {
-	v.push_back(Coin(0.5, (float)rand() / (RAND_MAX) * 1000, (float)rand() / (RAND_MAX) * 9 - 4.5));
+	v.push_back(Coin(0.5, randomFloat(1000), randomFloat(9) - 4.5));
+  //randomFloat(9) - 4.5 generates number between -4.5 and 4.5;
   }
 }
 

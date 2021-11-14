@@ -16,7 +16,8 @@ Obstacle::Obstacle(Point3D position, int size) {
 ObstacleSystem::ObstacleSystem() {
   // generate obstacles at random across the map
   for (int i = 0; i < 200; i++) {
-	v.push_back(Obstacle(Point3D(0.5, (float)rand() / (RAND_MAX) * 1000, (float)rand() / (RAND_MAX) * 10 - 5), 1));
+	v.push_back(Obstacle(Point3D(0.5, randomFloat(1000), randomFloat(10) - 5), 1));
+  //randomFloat(10) - 5 generates number between -5 and 5;
   }
 }
 

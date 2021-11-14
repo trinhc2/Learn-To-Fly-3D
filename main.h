@@ -9,4 +9,5 @@ bool inRangeZ(float high, float low, Rocket r);
 
 bool inRangeY(float high, float low, Rocket r);
 
+float randomFloat(float x);
 #endif

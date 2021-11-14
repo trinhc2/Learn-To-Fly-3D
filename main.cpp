@@ -4,6 +4,7 @@
 #include "coin.h"
 #include "rocket.h"
 #include "obstacle.h"
+#include "particle.h"
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -29,6 +30,7 @@ void *font = GLUT_BITMAP_HELVETICA_18; //Font which is used for glutBitMapCharac
 Rocket rocket = Rocket();
 CoinSystem coinSystem = CoinSystem();
 ObstacleSystem obstacleSystem = ObstacleSystem();
+ParticleSystem parSys = ParticleSystem();
 
 float maxForwardingDistance = 0; // Used to keep track of player score
 
@@ -45,6 +47,11 @@ bool inRangeZ(float high, float low, Rocket r) {
 
 bool inRangeY(float high, float low, Rocket r) {
   return (low <= r.position.mY + r.forwardDistance && r.position.mY + r.forwardDistance <= high);
+}
+
+/*Generate a random float between 0 and x*/
+float randomFloat(float x) {
+    return static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/x));
 }
 
 /**
@@ -93,6 +100,22 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
 }
 
 /**
+ * Draws Rocket trail 
+ */
+void drawParticles(ParticleSystem parSys) {
+    if (parSys.v.size() > 0) {
+        for(Particle p: parSys.v){
+            glPushMatrix();
+			glTranslatef(p.position.mX, p.position.mY, p.position.mZ);
+            glScalef(0.05,0.05,0.05);
+            glColor3f(p.r, p.g, p.b);
+            glutSolidCube(p.size);
+            glPopMatrix();
+        }
+    }
+}
+
+/**
  * Draws text to screen
  * 
  * Needs positioning and colour before calling this function 
@@ -113,6 +136,7 @@ void display(void) {
 	//For testing
 	if (cameraToggle) {
 	  gluLookAt(7, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, 0, 1, 0);
+		//gluLookAt(4, 4,4, 0,0,0, 0, 1, 0);
 	} else {
 	  gluLookAt(2, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
 	}
@@ -129,6 +153,7 @@ void display(void) {
 	drawRocket(rocket);
 	drawObstacles(obstacleSystem);
 	drawCoins(coinSystem);
+	drawParticles(parSys);
 
 	/**
 	 * Displays Text
@@ -186,11 +211,14 @@ void display(void) {
 	std::string scoreDisplay = "    Max Score: " + std::to_string(maxForwardingDistance);
 	drawText(scoreDisplay);
 
-	glRasterPos2i(220, 10);
+	glRasterPos2i(200, 10);
 	drawText("Press Space Bar to play");
 
 	glRasterPos2i(10, 500);
 	drawText("(1) 100 Coins: Increase Fuel by 100");
+
+	glRasterPos2i(10, 450);
+	drawText("(2) 100 Coins: Increase Speed");
 
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -247,6 +275,12 @@ void keyboard(unsigned char key, int x, int y) {
 		  rocket.fuel += 100;
 		}
 		break;
+	case '2':
+		if (rocket.coins >= 100) {
+		  rocket.coins -= 100;
+		  rocket.forwardSpeed += 0.1;
+		}
+		break;
 	}
   }
   glutPostRedisplay();
@@ -258,6 +292,7 @@ void FPS(int val) {
 	maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
 	coinSystem.update(rocket);
 	obstacleSystem.update(rocket);
+	parSys.update(rocket);
 	if (rocket.fuel <= 0) {
 	  screen = menu;
 	}
