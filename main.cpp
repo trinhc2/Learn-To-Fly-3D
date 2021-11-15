@@ -35,6 +35,13 @@ ParticleSystem parSys = ParticleSystem();
 
 float maxForwardingDistance = 0; // Used to keep track of player score
 
+// Textures
+GLubyte* img_data[3];
+GLuint texture_map[3];
+int width[3];
+int height[3];
+int max[3];
+
 /**
  * Checks if the rocket is within a range of coordinates
  */
@@ -95,14 +102,14 @@ void displayObj(std::string name) {
 void drawRocket(Rocket rocket) {
   glColor3f(1, 0, 0);
   glPushMatrix();
-  //Place the rocket at its position + how much it has traveled
-  glTranslatef(rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ);
-  //Rotate the rocket if it has been turning
-  glRotatef(rocket.angle, -1, 1, 0);
-  //Scales the rocket size down, scales can be updated in future
-  glScalef(0.3, 0.3, 0.3);
-  std::cout << "drawingrocket" << std::endl;
-  displayObj("rocket");
+    //Place the rocket at its position + how much it has traveled
+    glTranslatef(rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ);
+    //Rotate the rocket if it has been turning
+    glRotatef(rocket.angle, -1, 1, 0);
+    //Scales the rocket size down, scales can be updated in future
+    glScalef(0.3, 0.3, 0.3);
+    displayObj("rocket");
+    glutSolidCube(1);
   glPopMatrix();
 }
 
@@ -113,8 +120,8 @@ void drawCoins(CoinSystem coinSystem) {
   for (std::size_t i = 0; i < coinSystem.v.size(); i++) {
 	glColor3f(1, 1, 0);
 	glPushMatrix();
-	glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
-	glRotatef(coinSystem.rotation, 1, 0, 0);
+    glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
+    glRotatef(coinSystem.rotation, 1, 0, 0);
     displayObj("coin");
 	glPopMatrix();
   }
@@ -178,6 +185,20 @@ void display(void) {
 	}
 
 	glColor3f(0, 0, 1);
+
+    // float light_pos1[4] = {0,-3,2,1};
+    // float amb1[4] = {0.5,0.5,0.5,1};
+    // float diff1[4] = {1,1,1,1};
+    // float spec1[4] = {1,1,1,1};
+
+    // glEnable(GL_LIGHTING);
+    // glEnable(GL_LIGHT0);
+
+    // // Light 1
+    // glLightfv(GL_LIGHT0, GL_POSITION, light_pos1);
+    // glLightfv(GL_LIGHT0, GL_AMBIENT, amb1);
+    // glLightfv(GL_LIGHT0, GL_DIFFUSE, diff1);
+    // glLightfv(GL_LIGHT0, GL_SPECULAR, spec1);
 
 	//Draws the ground plane
 	glPushMatrix();
@@ -324,14 +345,14 @@ void keyboard(unsigned char key, int x, int y) {
 
 void FPS(int val) {
   if (screen == game) {
-	rocket.update();
-	maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
-	coinSystem.update(rocket);
-	obstacleSystem.update(rocket);
-	parSys.update(rocket);
-	if (rocket.fuel <= 0) {
-	  screen = menu;
-	}
+    rocket.update();
+    maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
+    coinSystem.update(rocket);
+    obstacleSystem.update(rocket);
+    parSys.update(rocket);
+    if (rocket.fuel <= 0) {
+      screen = menu;
+    }
   } else if (screen == menu) {
 
   }
@@ -340,6 +361,59 @@ void FPS(int val) {
   glutTimerFunc(17, FPS, 0);
 }
 
+GLubyte* LoadPPM(char* file, int* width, int* height, int* max)
+{
+    GLubyte* img;
+    FILE *fd;
+    int n, m;
+    int  k, nm;
+    char c;
+    int i;
+    char b[100];
+    float s;
+    int red, green, blue;
+    
+    fd = fopen(file, "r");
+    fscanf(fd,"%[^\n] ",b);
+    if(b[0]!='P'|| b[1] != '3')
+    {
+        printf("%s is not a PPM file!\n",file);
+        exit(0);
+    }
+    printf("%s is a PPM file\n", file);
+    fscanf(fd, "%c",&c);
+    while(c == '#')
+    {
+        fscanf(fd, "%[^\n] ", b);
+        printf("%s\n",b);
+        fscanf(fd, "%c",&c);
+    }
+    ungetc(c,fd);
+    fscanf(fd, "%d %d %d", &n, &m, &k);
+    
+    printf("%d rows  %d columns  max value= %d\n",n,m,k);
+    
+    nm = n*m;
+    
+    img = (GLubyte*)(malloc(3*sizeof(GLuint)*nm));
+    
+    s=255.0/k;
+    
+    
+    for(i=0;i<nm;i++)
+    {
+        fscanf(fd,"%d %d %d",&red, &green, &blue );
+        img[3*nm-3*i-3]=red*s;
+        img[3*nm-3*i-2]=green*s;
+        img[3*nm-3*i-1]=blue*s;
+    }
+    
+    *width = n;
+    *height = m;
+    *max = k;
+    
+    return img;
+}
 void init(void) {
   glColor3f(1, 1, 1);
   glMatrixMode(GL_PROJECTION);
@@ -348,6 +422,38 @@ void init(void) {
   gluPerspective(70, 1, 1, 20);
   rocket.loadOBJ("./assets/rocket/rocket.obj");
   coinSystem.loadOBJ("./assets/coin/coin.obj");
+
+  glMatrixMode(GL_TEXTURE);
+  glScalef(1,-1,-1);
+
+  glEnable(GL_TEXTURE_2D);
+  glGenTextures(3, texture_map);
+
+  glBindTexture(GL_TEXTURE_2D, texture_map[0]);
+  img_data[0] = LoadPPM("lenore.ppm", &width[0], &height[0], &max[0]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, img_data[0]);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  glBindTexture(GL_TEXTURE_2D, texture_map[1]);
+  img_data[1] = LoadPPM("snail_a.ppm", &width[1], &height[1], &max[1]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[1], height[1], 0, GL_RGB, GL_UNSIGNED_BYTE, img_data[1]);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  glBindTexture(GL_TEXTURE_2D, texture_map[2]);
+  img_data[2] = LoadPPM("marble.ppm", &width[2], &height[2], &max[2]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[2], height[2], 0, GL_RGB, GL_UNSIGNED_BYTE, img_data[2]);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+
 }
 
 /* main function - program entry point */
