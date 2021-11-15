@@ -25,7 +25,7 @@ endif
 all: main
 
 main:
-	$(CC) -o main main.cpp mathLib2d.cpp mathLib3D.cpp coin.cpp rocket.cpp obstacle.cpp particle.cpp $(CFLAGS) $(LDFLAGS)
+	$(CC) -o main main.cpp mathLib2d.cpp mathLib3D.cpp objLoader.cpp coin.cpp rocket.cpp obstacle.cpp particle.cpp $(CFLAGS) $(LDFLAGS)
 
 clean:
 	rm -f main

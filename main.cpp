@@ -16,6 +16,7 @@
 #  include <GL/gl.h>
 #  include <GL/glu.h>
 #  include <GL/freeglut.h>
+#include <GL/glut.h>
 
 #endif
 
@@ -67,29 +68,38 @@ void displayObj(std::string name) {
     std::vector<Point3D> out_vertices;
     std::vector<Vec3D> out_normals;
     std::vector<Point2D> out_uvs;
+    int size;
 
+    // Note: vertexIndices, uvIndices, and normalIndices all have the same value
     if (name.compare("rocket") == 0) {
         out_vertices = rocket.out_vertices;
         out_normals = rocket.out_normals;
         out_uvs = rocket.out_uvs;
+        size = rocket.vertexIndices.size();
     } else if (name.compare("coin") == 0) {
         out_vertices = coinSystem.out_vertices;
         out_normals = coinSystem.out_normals;
         out_uvs = coinSystem.out_uvs;
+        size = coinSystem.vertexIndices.size();
     }
-    glPushMatrix();
 
-        glColor3f(1,0,0);
+    // Draw triangles based on the vertices we read from our obj file
+    // Each face consists of <vertex1, texture1, normal1, vertex2, texture2, normal2, vertex3, texture3, normal3>
+    // That means we can loop through our "out" vectors and generate a bunch of vertices with normal and texture coords
+    glPushMatrix();
         glBegin(GL_TRIANGLES);
-        // Draw vertices, normals, and textures
-        for (Point3D vertex: out_vertices) {
-            glVertex3f(vertex.mX, vertex.mY, vertex.mZ);
-        }
-        for (Vec3D normal: out_normals) {
-            glNormal3f(normal.mX, normal.mY, normal.mZ);
-        }
-        for (Point2D texture: out_uvs) {
-            glTexCoord2f(texture.mX, texture.mY);
+        for (int i = 0; i < size; i++) {
+            //texture:
+            Point2D t = out_uvs[i];
+            glTexCoord2f(t.mX, t.mY);
+
+            //normal:
+            Vec3D v = out_normals[i];
+            glNormal3f(v.mX, v.mY, v.mZ);
+
+            //vertex:
+            Point3D m = out_vertices[i];
+            glVertex3f(m.mX, m.mY, m.mZ);
         }
         glEnd();
 
@@ -101,6 +111,7 @@ void displayObj(std::string name) {
  */
 void drawRocket(Rocket rocket) {
   glColor3f(1, 0, 0);
+  glBindTexture(GL_TEXTURE_2D, texture_map[0]);
   glPushMatrix();
     //Place the rocket at its position + how much it has traveled
     glTranslatef(rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ);
@@ -109,14 +120,16 @@ void drawRocket(Rocket rocket) {
     //Scales the rocket size down, scales can be updated in future
     glScalef(0.3, 0.3, 0.3);
     displayObj("rocket");
-    glutSolidCube(1);
   glPopMatrix();
+  // Reset texture binding after finishing draw
+  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 /**
  * Draws the coins to the screen
  */
 void drawCoins(CoinSystem coinSystem) {
+  glBindTexture(GL_TEXTURE_2D, texture_map[2]);
   for (std::size_t i = 0; i < coinSystem.v.size(); i++) {
 	glColor3f(1, 1, 0);
 	glPushMatrix();
@@ -125,6 +138,8 @@ void drawCoins(CoinSystem coinSystem) {
     displayObj("coin");
 	glPopMatrix();
   }
+  // Reset texture binding after finishing draw
+  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 /**
@@ -172,117 +187,103 @@ void drawText(std::string text) {
 
 void display(void) {
   if (screen == game) { //If state of screen is on game, draw the game
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
-	//For testing
-	if (cameraToggle) {
-	  gluLookAt(7, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, 0, 1, 0);
-		//gluLookAt(4, 4,4, 0,0,0, 0, 1, 0);
-	} else {
-	  gluLookAt(2, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
-	}
+    //For testing
+    if (cameraToggle) {
+      gluLookAt(7, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ, 0, 1, 0);
+      //gluLookAt(4, 4,4, 0,0,0, 0, 1, 0);
+    } else {
+      gluLookAt(2, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
+    }
 
-	glColor3f(0, 0, 1);
+    glColor3f(0, 0, 1);
 
-    // float light_pos1[4] = {0,-3,2,1};
-    // float amb1[4] = {0.5,0.5,0.5,1};
-    // float diff1[4] = {1,1,1,1};
-    // float spec1[4] = {1,1,1,1};
+    //Draws the ground plane
+    glPushMatrix();
+    // make y arbitrarily high to simulate an infinite long road ahead
+    glScalef(0.1, 10000, 10);
+    glutSolidCube(1);
+    glPopMatrix();
 
-    // glEnable(GL_LIGHTING);
-    // glEnable(GL_LIGHT0);
+    drawRocket(rocket);
+    drawObstacles(obstacleSystem);
+    drawCoins(coinSystem);
+    drawParticles(parSys);
 
-    // // Light 1
-    // glLightfv(GL_LIGHT0, GL_POSITION, light_pos1);
-    // glLightfv(GL_LIGHT0, GL_AMBIENT, amb1);
-    // glLightfv(GL_LIGHT0, GL_DIFFUSE, diff1);
-    // glLightfv(GL_LIGHT0, GL_SPECULAR, spec1);
+    /**
+    * Displays Text
+    * Source: https://stackoverflow.com/questions/18847109/displaying-fixed-location-2d-text-in-a-3d-opengl-world-using-glut
+    * Explanation: http://www.lighthouse3d.com/tutorials/glut-tutorial/bitmap-fonts-and-orthogonal-projections/
+    *
+    */
+    //Display Text
+    glColor3f(1, 1, 1); //Text is white
+    glMatrixMode(GL_PROJECTION); //Setting matrix to projection so we can specify position of text in pixels
 
-	//Draws the ground plane
-	glPushMatrix();
-	// make y arbitrarily high to simulate an infinite long road ahead
-	glScalef(0.1, 10000, 10);
-	glutSolidCube(1);
-	glPopMatrix();
+    glPushMatrix(); //Pushing matrix on top of stack (saving previous display)
+    glLoadIdentity();
+    gluOrtho2D(0.0, 600, 0.0, 600);
+    glMatrixMode(GL_MODELVIEW);
 
-	drawRocket(rocket);
-	drawObstacles(obstacleSystem);
-	drawCoins(coinSystem);
-	drawParticles(parSys);
+    //Display Fuel
+    glPushMatrix();
+    glLoadIdentity();
+    glColor3f(1, 1, 1);
 
-	/**
-	 * Displays Text
-	 * Source: https://stackoverflow.com/questions/18847109/displaying-fixed-location-2d-text-in-a-3d-opengl-world-using-glut
-	 * Explanation: http://www.lighthouse3d.com/tutorials/glut-tutorial/bitmap-fonts-and-orthogonal-projections/
-	 *
-	 */
-	//Display Text
-	glColor3f(1, 1, 1); //Text is white
-	glMatrixMode(GL_PROJECTION); //Setting matrix to projection so we can specify position of text in pixels
+    glRasterPos2i(10, 10);
+    std::string fuelDisplay = "Fuel: " + std::to_string(rocket.fuel);
+    drawText(fuelDisplay);
 
-	glPushMatrix(); //Pushing matrix on top of stack (saving previous display)
-	glLoadIdentity();
-	gluOrtho2D(0.0, 600, 0.0, 600);
-	glMatrixMode(GL_MODELVIEW);
+    //Display amount of coins
+    glRasterPos2i(10, 580);
+    std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
+    drawText(coinDisplay);
 
-	//Display Fuel
-	glPushMatrix();
-	glLoadIdentity();
-	glColor3f(1, 1, 1);
+    //Undoing changes to display
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 
-	glRasterPos2i(10, 10);
-	std::string fuelDisplay = "Fuel: " + std::to_string(rocket.fuel);
-	drawText(fuelDisplay);
-
-	//Display amount of coins
-	glRasterPos2i(10, 580);
-	std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
-	drawText(coinDisplay);
-
-	//Undoing changes to display
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-
-	glutSwapBuffers();
+    glutSwapBuffers();
   } else if (screen == menu) { //if state of screen is on menu, draw the menu
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	gluOrtho2D(0.0, 600, 0.0, 600);
-	glMatrixMode(GL_MODELVIEW);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0.0, 600, 0.0, 600);
+    glMatrixMode(GL_MODELVIEW);
 
-	glPushMatrix();
-	glLoadIdentity();
+    glPushMatrix();
+    glLoadIdentity();
 
-	glColor3f(1, 1, 1);
-	glRasterPos2i(10, 580);
-	std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
-	drawText(coinDisplay);
+    glColor3f(1, 1, 1);
+    glRasterPos2i(10, 580);
+    std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
+    drawText(coinDisplay);
 
-	std::string scoreDisplay = "    Max Score: " + std::to_string(maxForwardingDistance);
-	drawText(scoreDisplay);
+    std::string scoreDisplay = "    Max Score: " + std::to_string(maxForwardingDistance);
+    drawText(scoreDisplay);
 
-	glRasterPos2i(200, 10);
-	drawText("Press Space Bar to play");
+    glRasterPos2i(200, 10);
+    drawText("Press Space Bar to play");
 
-	glRasterPos2i(10, 500);
-	drawText("(1) 100 Coins: Increase Fuel by 100");
+    glRasterPos2i(10, 500);
+    drawText("(1) 100 Coins: Increase Fuel by 100");
 
-	glRasterPos2i(10, 450);
-	drawText("(2) 100 Coins: Increase Speed");
+    glRasterPos2i(10, 450);
+    drawText("(2) 100 Coins: Increase Speed");
 
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 
-	glutSwapBuffers();
+    glutSwapBuffers();
   }
 }
 
@@ -361,6 +362,11 @@ void FPS(int val) {
   glutTimerFunc(17, FPS, 0);
 }
 
+/* LoadPPM -- loads the specified ppm file, and returns the image data as a GLubyte
+ *  (unsigned byte) array. Also returns the width and height of the image, and the
+ *  maximum colour value by way of arguments
+ *  usage: GLubyte myImg = LoadPPM("myImg.ppm", &width, &height, &max);
+ */
 GLubyte* LoadPPM(char* file, int* width, int* height, int* max)
 {
     GLubyte* img;
@@ -414,45 +420,35 @@ GLubyte* LoadPPM(char* file, int* width, int* height, int* max)
     
     return img;
 }
+void loadTexture(char* filename, int index) {
+  glBindTexture(GL_TEXTURE_2D, texture_map[index]);
+  img_data[index] = LoadPPM(filename, &width[index], &height[index], &max[index]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[index], height[index], 0, GL_RGB, GL_UNSIGNED_BYTE, img_data[index]);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+}
+
 void init(void) {
   glColor3f(1, 1, 1);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   //glOrtho(-1, 1, -1, 1, -20, 20);
   gluPerspective(70, 1, 1, 20);
-  rocket.loadOBJ("./assets/rocket/rocket.obj");
-  coinSystem.loadOBJ("./assets/coin/coin.obj");
-
-  glMatrixMode(GL_TEXTURE);
-  glScalef(1,-1,-1);
+  rocket.loadRocketObj("./assets/rocket/rocket.obj");
+  coinSystem.loadCoinObj("./assets/coin/coin.obj");
 
   glEnable(GL_TEXTURE_2D);
   glGenTextures(3, texture_map);
 
-  glBindTexture(GL_TEXTURE_2D, texture_map[0]);
-  img_data[0] = LoadPPM("lenore.ppm", &width[0], &height[0], &max[0]);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, img_data[0]);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  // Temporarily using some ppms from lecture, will replace with proper textures later
+  loadTexture("lenore.ppm", 0);
+  loadTexture("snail_a.ppm", 1);
+  loadTexture("marble.ppm", 2);
 
-  glBindTexture(GL_TEXTURE_2D, texture_map[1]);
-  img_data[1] = LoadPPM("snail_a.ppm", &width[1], &height[1], &max[1]);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[1], height[1], 0, GL_RGB, GL_UNSIGNED_BYTE, img_data[1]);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-  glBindTexture(GL_TEXTURE_2D, texture_map[2]);
-  img_data[2] = LoadPPM("marble.ppm", &width[2], &height[2], &max[2]);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[2], height[2], 0, GL_RGB, GL_UNSIGNED_BYTE, img_data[2]);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
+  glMatrixMode(GL_TEXTURE);
+  glScalef(1,-1,-1);
 
 }
 
