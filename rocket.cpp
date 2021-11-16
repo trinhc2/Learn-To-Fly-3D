@@ -13,9 +13,9 @@ Rocket::Rocket() {
   position = Point3D(0.5, -5.45, zOffset);
   angle = 0;
   fuelUpgrades = 0;
-  initialFuel = 1000;
+  initialFuel = 100;
   fuel = 0;
-  coins = 500;
+  coins = 0;
   zOffset = 0;
   forwardDistance = 0;
   forwardSpeed = 0.1;

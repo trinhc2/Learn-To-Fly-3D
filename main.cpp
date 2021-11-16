@@ -58,8 +58,12 @@ void printWelcomeMessage() {
   std::cout << "***     CONTROLS     ***" << std::endl;
   std::cout << "************************" << std::endl;
   std::cout << "Move: A/D (left/right)" << std::endl;
-  std::cout << "Exit: q" << std::endl;
+  std::cout << "Exit: Q/ESC" << std::endl;
   std::cout << "Toggle birds-eye view: v" << std::endl;
+  std::cout << "***     IN SHOP/MENU     ***" << std::endl;
+  std::cout << "Start next run: Space bar" << std::endl;
+  std::cout << "Purchase Upgrades: Number Keys" << std::endl;
+  std::cout << "Exit: Q/ESC" << std::endl;
   std::cout << "************************" << std::endl;
   std::cout << "***   EXTRA DETAILS  ***" << std::endl;
   std::cout << "************************" << std::endl;
