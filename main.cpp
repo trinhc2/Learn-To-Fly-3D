@@ -43,6 +43,30 @@ int width[3];
 int height[3];
 int max[3];
 
+void printWelcomeMessage() {
+  std::cout << "Welcome to Learn To Fly 3D!" << std::endl;
+  std::cout << "************************" << std::endl;
+  std::cout << "***   INSTRUCTIONS   ***" << std::endl;
+  std::cout << "************************" << std::endl;
+  std::cout << "You are learning to fly with your rocket!" << std::endl;
+  std::cout << "Your goal is to reach space. Unfortunately, your rocket is too weak right now." << std::endl;
+  std::cout << "Collect coins along the path to upgrade your rocket. Avoid the obstacles; if you get hit, your fuel meter will decrease significantly." << std::endl;
+  std::cout << "At the menu, press the number on your keyboard to use your Coins to purchase upgrades." << std::endl;
+  std::cout << "On the game screen, the amount of fuel you have left is displayed on the bottom-left. Once your fuel reaches 0, you will be redirected to the main menu." << std::endl;
+  std::cout << "The number of coins you have is on the top-left. You can use these coins to purchase upgrades, and they do not expire (i.e. you can choose to save your coins after each round instead of purchasing anything)." << std::endl;
+  std::cout << "************************" << std::endl;
+  std::cout << "***     CONTROLS     ***" << std::endl;
+  std::cout << "************************" << std::endl;
+  std::cout << "Move: A/D (left/right)" << std::endl;
+  std::cout << "Exit: q" << std::endl;
+  std::cout << "Toggle birds-eye view: v" << std::endl;
+  std::cout << "************************" << std::endl;
+  std::cout << "***   EXTRA DETAILS  ***" << std::endl;
+  std::cout << "************************" << std::endl;
+  std::cout << "todo :)" << std::endl;
+
+}
+
 /**
  * Checks if the rocket is within a range of coordinates
  */
@@ -440,6 +464,7 @@ void loadTexture(char* filename, int index) {
 }
 
 void init(void) {
+  printWelcomeMessage();
   glColor3f(1, 1, 1);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
