@@ -15,7 +15,7 @@ Rocket::Rocket() {
   fuelUpgrades = 0;
   initialFuel = 1000;
   fuel = 0;
-  coins = 100;
+  coins = 500;
   zOffset = 0;
   forwardDistance = 0;
   forwardSpeed = 0.1;

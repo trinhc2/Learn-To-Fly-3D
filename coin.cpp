@@ -14,11 +14,6 @@ Coin::Coin(float x, float y, float z) {
 }
 
 CoinSystem::CoinSystem() {
-  // generate random coins acorss the map
-  for(int i=0; i<50; i++) {
-	v.push_back(Coin(0.5, randomFloat(1000), randomFloat(9) - 4.5));
-  //randomFloat(9) - 4.5 generates number between -4.5 and 4.5;
-  }
 }
 
 void CoinSystem::update(Rocket& r) {
@@ -27,6 +22,13 @@ void CoinSystem::update(Rocket& r) {
 	rotation = 0;
   } else {
 	rotation += 1;
+  }
+  //If there are less than 5 coins in the system then generate more
+  if (v.size() < 5){
+    //for the y component, 20 is how far our drawing distance is, so we always spawn it off screen
+    //randomFloat(40) arbitrarily chosen to spread them apart
+    //randomFloat(9) - 4.5 generates number between -4.5 and 4.5 which is the range our rocket can reach;
+    v.push_back(Coin(0.5, randomFloat(40) + r.forwardDistance + 20, randomFloat(9) - 4.5));
   }
   //If coin is collected then remove it from the game (the vector)
   for (std::size_t i = 0; i < v.size(); i++) {

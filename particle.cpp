@@ -22,7 +22,7 @@ Particle::Particle(Point3D point) {
 }
 
 ParticleSystem::ParticleSystem() {
-    origin = Point3D(0.5, -5.45, 0);
+    origin = Point3D(0.5, -5.40, 0);
 
 }
 
@@ -42,7 +42,7 @@ void ParticleSystem::update(Rocket& r) {
 
 
         }    
-    origin.mZ = r.zOffset;
+    origin.mZ = r.zOffset + 0.05;
     origin.mY += r.forwardSpeed;
     Particle p = Particle(origin);
     v.push_back(p);

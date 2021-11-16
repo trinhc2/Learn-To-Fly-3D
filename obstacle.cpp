@@ -15,14 +15,16 @@ Obstacle::Obstacle(Point3D position, int size) {
 }
 
 ObstacleSystem::ObstacleSystem() {
-  // generate obstacles at random across the map
-  for (int i = 0; i < 200; i++) {
-	v.push_back(Obstacle(Point3D(0.5, randomFloat(1000), randomFloat(10) - 5), 1));
-  //randomFloat(10) - 5 generates number between -5 and 5;
-  }
 }
 
 void ObstacleSystem::update(Rocket& r) {
+    //If there are less than 10 obstacles in the system, then generate more
+    if (v.size() < 10){
+    //for the y component, 20 is how far our drawing distance is, so we always spawn it off screen
+    //randomFloat(40) to spread them apart
+    //randomFloat(9) - 4.5 generates number between -4.5 and 4.5 which is the range our rocket can reach;
+    v.push_back(Obstacle(Point3D(0.5, randomFloat(40) + r.forwardDistance + 20, randomFloat(9) - 4.5), 1));
+  }
   //If obstacle is destroyed then remove it from the game (the vector)
   for (std::size_t i = 0; i < v.size(); i++) {
     if (inRangeY(v.at(i).position.mY + 0.65, v.at(i).position.mY - 0.65, r)

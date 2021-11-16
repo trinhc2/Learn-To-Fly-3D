@@ -139,19 +139,21 @@ void displayObj(std::string name) {
  * Draws the rocket to screen
  */
 void drawRocket(Rocket rocket) {
-  glColor3f(1, 0, 0);
-  glBindTexture(GL_TEXTURE_2D, texture_map[2]);
-  glPushMatrix();
+  	glColor3f(1, 0, 0);
+  	glBindTexture(GL_TEXTURE_2D, texture_map[2]);
+  	glPushMatrix();
     //Place the rocket at its position + how much it has traveled
     glTranslatef(rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ);
     //Rotate the rocket if it has been turning
+	glRotatef(2.5, 1, 0, 0); //points rocket more to the left so it pointing forwards by default
+	glRotatef(-10, 0, 1, 0); //rotates rocket along y so it is not on a diagonal by default
     glRotatef(rocket.angle, -1, 1, 0);
     //Scales the rocket size down, scales can be updated in future
     glScalef(0.3, 0.3, 0.3);
     displayObj("rocket");
-  glPopMatrix();
-  // Reset texture binding after finishing draw
-  glBindTexture(GL_TEXTURE_2D, 0);
+  	glPopMatrix();
+  	// Reset texture binding after finishing draw
+  	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 /**
@@ -330,7 +332,7 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	  case 'a':
 		//Turn the rocket left and rotates
-		if (rocket.zOffset < 3) {
+		if (rocket.zOffset < 4.5) {
 		  rocket.zOffset += 0.2;
 		  rocket.angle -= 1;
 
@@ -338,7 +340,7 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	  case 'd':
 		//Turn the rocket right and rotates
-		if (rocket.zOffset > -3) {
+		if (rocket.zOffset > -4.5) {
 		  rocket.zOffset -= 0.2;
 		  rocket.angle += 1;
 
