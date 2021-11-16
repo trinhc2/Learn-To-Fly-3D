@@ -384,6 +384,7 @@ void keyboard(unsigned char key, int x, int y) {
 		rocket.forwardDistance = 0;
 		rocket.zOffset = 0;
 		rocket.fuel += rocket.initialFuel + rocket.fuelUpgrades;
+		rocket.angle = 0;
 		screen = game;
 		break;
 	  case '1':
