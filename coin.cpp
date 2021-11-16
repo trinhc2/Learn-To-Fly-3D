@@ -38,6 +38,8 @@ void CoinSystem::update(Rocket& r) {
 	    //if collision: remove coin from game and increment coins total
 	    v.erase(v.begin() + i);
 	    r.coins += 100;
+      coinGet = true; //Tell game coin has been hit
+      coinGetAge = 3;//Set timer for text age
 	  }
     //If coin is behind rocket, then we don't need to keep track of it anymore
     else if (v.at(i).position.mY + 2< r.position.mY + r.forwardDistance){

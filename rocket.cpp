@@ -26,7 +26,7 @@ void Rocket::update() {
   //While the rocket has fuel move forward and decrement fuel gauge
   if (fuel > 0) {
 	forwardDistance += forwardSpeed;
-	fuel -= forwardSpeed;
+	fuel -= 0.1;
   } else {
 	fuel = 0;
   }

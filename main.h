@@ -3,6 +3,11 @@
 
 #include "rocket.h"
 
+extern bool coinGet;
+extern bool obstacleHit;
+extern float obsHitAge;
+extern float coinGetAge;
+
 bool inRangeX(float high, float low, Rocket r);
 
 bool inRangeZ(float high, float low, Rocket r);

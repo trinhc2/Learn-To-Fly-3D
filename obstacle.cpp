@@ -29,9 +29,11 @@ void ObstacleSystem::update(Rocket& r) {
   for (std::size_t i = 0; i < v.size(); i++) {
     if (inRangeY(v.at(i).position.mY + 0.65, v.at(i).position.mY - 0.65, r)
 		  && inRangeZ(v.at(i).position.mZ + 0.65, v.at(i).position.mZ - 0.65, r)) {
-	    //if collision: remove coin from game and increment coins total
+	    //if collision: remove obstacle from game and decrement fuel total
 	    v.erase(v.begin() + i);
       r.fuel -= r.collisionFuelPenalty;
+      obstacleHit = true; //Tell game obstacle has been hit
+      obsHitAge = 3; //Set time for text to display on screen
 	  }
     //If obstacle is behind rocket, then we don't need to keep track of it anymore
     else if (v.at(i).position.mY + 2< r.position.mY + r.forwardDistance){

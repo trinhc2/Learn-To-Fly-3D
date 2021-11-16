@@ -25,6 +25,11 @@ enum Screen { game, menu };
 
 bool cameraToggle = false;
 
+//Detection for coin/obstacles, will display text for a certain amount of time (age value is decremented in FPS)
+bool coinGet = false;
+bool obstacleHit = false;
+float obsHitAge = 0;
+float coinGetAge = 0;
 Screen screen = menu; //screen state
 
 void *font = GLUT_BITMAP_HELVETICA_18; //Font which is used for glutBitMapCharacter
@@ -60,7 +65,7 @@ void printWelcomeMessage() {
   std::cout << "Move: A/D (left/right)" << std::endl;
   std::cout << "Exit: Q/ESC" << std::endl;
   std::cout << "Toggle birds-eye view: v" << std::endl;
-  std::cout << "***     IN SHOP/MENU     ***" << std::endl;
+  std::cout << "***   IN SHOP/MENU   ***" << std::endl;
   std::cout << "Start next run: Space bar" << std::endl;
   std::cout << "Purchase Upgrades: Number Keys" << std::endl;
   std::cout << "Exit: Q/ESC" << std::endl;
@@ -276,7 +281,21 @@ void display(void) {
     std::string fuelDisplay = "Fuel: " + std::to_string(rocket.fuel);
     drawText(fuelDisplay);
 
+	//If an obstacle has been hit, display affect to fuel amount
+	if (obstacleHit) {
+		glColor3f(1,0,0);
+		glRasterPos2i(150, 10);
+		drawText("-20");
+	}
+	//If a coin has been collected, display affec to coin amount
+	if (coinGet) {
+		glColor3f(0,1,0);
+		glRasterPos2i(110, 580);
+		drawText("+100");
+	}
+
     //Display amount of coins
+	glColor3f(1, 1, 1);
     glRasterPos2i(10, 580);
     std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
     drawText(coinDisplay);
@@ -363,6 +382,7 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	  case 32: //space bar
 		rocket.forwardDistance = 0;
+		rocket.zOffset = 0;
 		rocket.fuel += rocket.initialFuel + rocket.fuelUpgrades;
 		screen = game;
 		break;
@@ -393,6 +413,22 @@ void FPS(int val) {
     if (rocket.fuel <= 0) {
       screen = menu;
     }
+	//If obstacle has been hit, decrement the amount of time the text stays on the screen
+	if (obstacleHit) {
+		obsHitAge -= 0.1;
+	}
+	//If text age is < 0 reset obstacle detection
+	if (obsHitAge < 0) {
+		obstacleHit = false;
+	}
+	//If coin has been hit, decrement the amount of time the text stays on the screen
+	if (coinGet) {
+		coinGetAge -= 0.1;
+	}
+	//If text age is < 0 reset coin detection
+	if (coinGetAge < 0) {
+		coinGet = false;
+	}
   } else if (screen == menu) {
 
   }
