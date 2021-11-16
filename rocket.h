@@ -25,7 +25,7 @@ class Rocket {
   std::vector<Point2D> out_uvs;
   std::vector<Vec3D> out_normals;
 
-  bool loadOBJ(const char* path);
+  bool loadRocketObj(const char* path);
 
 };
 

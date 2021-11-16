@@ -1,5 +1,6 @@
 #include "obstacle.h"
 #include "mathLib3D.h"
+#include "objLoader.h"
 #include <stdlib.h>
 #include "main.h"
 
@@ -35,4 +36,10 @@ void ObstacleSystem::update(Rocket& r) {
       v.erase(v.begin() + i);
     }    
   }
+}
+
+bool ObstacleSystem::loadObstacleObj(const char* path) {
+  bool b = loadOBJ(path, vertexIndices, uvIndices, normalIndices, 
+                  out_vertices, out_uvs, out_normals);
+  return b;
 }

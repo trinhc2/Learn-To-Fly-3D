@@ -19,6 +19,13 @@ class ObstacleSystem {
   std::vector<Obstacle> v;
   ObstacleSystem();
   void update(Rocket& r);
+
+  std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
+  std::vector<Point3D> out_vertices;
+  std::vector<Point2D> out_uvs;
+  std::vector<Vec3D> out_normals;
+  
+  bool loadObstacleObj(const char* path);
 };
 
 #endif
