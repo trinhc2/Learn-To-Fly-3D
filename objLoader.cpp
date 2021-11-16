@@ -38,7 +38,7 @@ bool loadOBJ(const char* path,
         // UV
         } else if (strcmp( lineHeader, "vt" ) == 0 ) {
             Point2D uv;
-            fscanf(file, "%f, %f\n", &uv.mX, &uv.mY);
+            fscanf(file, "%f %f\n", &uv.mX, &uv.mY);
             temp_uvs.push_back(uv);
         // Normals
         } else if ( strcmp( lineHeader, "vn" ) == 0 ) {

@@ -72,15 +72,20 @@ void displayObj(std::string name) {
 
     // Note: vertexIndices, uvIndices, and normalIndices all have the same value
     if (name.compare("rocket") == 0) {
-        out_vertices = rocket.out_vertices;
-        out_normals = rocket.out_normals;
-        out_uvs = rocket.out_uvs;
-        size = rocket.vertexIndices.size();
+      out_vertices = rocket.out_vertices;
+      out_normals = rocket.out_normals;
+      out_uvs = rocket.out_uvs;
+      size = rocket.vertexIndices.size();
     } else if (name.compare("coin") == 0) {
-        out_vertices = coinSystem.out_vertices;
-        out_normals = coinSystem.out_normals;
-        out_uvs = coinSystem.out_uvs;
-        size = coinSystem.vertexIndices.size();
+      out_vertices = coinSystem.out_vertices;
+      out_normals = coinSystem.out_normals;
+      out_uvs = coinSystem.out_uvs;
+      size = coinSystem.vertexIndices.size();
+    } else if (name.compare("obstacle") == 0) {
+      out_vertices = obstacleSystem.out_vertices;
+      out_normals = obstacleSystem.out_normals;
+      out_uvs = obstacleSystem.out_uvs;
+      size = obstacleSystem.vertexIndices.size();
     }
 
     // Draw triangles based on the vertices we read from our obj file
@@ -111,7 +116,7 @@ void displayObj(std::string name) {
  */
 void drawRocket(Rocket rocket) {
   glColor3f(1, 0, 0);
-  glBindTexture(GL_TEXTURE_2D, texture_map[0]);
+  glBindTexture(GL_TEXTURE_2D, texture_map[2]);
   glPushMatrix();
     //Place the rocket at its position + how much it has traveled
     glTranslatef(rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ);
@@ -129,7 +134,7 @@ void drawRocket(Rocket rocket) {
  * Draws the coins to the screen
  */
 void drawCoins(CoinSystem coinSystem) {
-  glBindTexture(GL_TEXTURE_2D, texture_map[2]);
+  glBindTexture(GL_TEXTURE_2D, texture_map[0]);
   for (std::size_t i = 0; i < coinSystem.v.size(); i++) {
 	glColor3f(1, 1, 0);
 	glPushMatrix();
@@ -146,15 +151,19 @@ void drawCoins(CoinSystem coinSystem) {
  * Draws the obstacles to the screen
  */
 void drawObstacles(ObstacleSystem obstacleSystem) {
+  glBindTexture(GL_TEXTURE_2D, texture_map[1]);
   for (std::size_t i = 0; i < obstacleSystem.v.size(); i++) {
-	glColor3f(0, 1, 0);
-	glPushMatrix();
-	glTranslatef(obstacleSystem.v.at(i).position.mX,
-				 obstacleSystem.v.at(i).position.mY,
-				 obstacleSystem.v.at(i).position.mZ);
-	glutSolidCube(obstacleSystem.v.at(i).size);
-	glPopMatrix();
+    glColor3f(0, 1, 0);
+    glPushMatrix();
+      glTranslatef(obstacleSystem.v.at(i).position.mX,
+            obstacleSystem.v.at(i).position.mY,
+            obstacleSystem.v.at(i).position.mZ);
+      displayObj("obstacle");
+      // glutSolidCube(obstacleSystem.v.at(i).size);
+    glPopMatrix();
   }
+  // Reset texture binding after finishing draw
+  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 /**
@@ -438,6 +447,7 @@ void init(void) {
   gluPerspective(70, 1, 1, 20);
   rocket.loadRocketObj("./assets/rocket/rocket.obj");
   coinSystem.loadCoinObj("./assets/coin/coin.obj");
+  obstacleSystem.loadObstacleObj("./assets/obstacle/obstacle.obj");
 
   glEnable(GL_TEXTURE_2D);
   glGenTextures(3, texture_map);
