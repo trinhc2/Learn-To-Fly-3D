@@ -28,12 +28,13 @@ void CoinSystem::update(Rocket& r) {
     //for the y component, 20 is how far our drawing distance is, so we always spawn it off screen
     //randomFloat(40) arbitrarily chosen to spread them apart
     //randomFloat(9) - 4.5 generates number between -4.5 and 4.5 which is the range our rocket can reach;
-    v.push_back(Coin(0.5, randomFloat(40) + r.forwardDistance + 20, randomFloat(9) - 4.5));
+    v.push_back(Coin(randomFloat(2.6) - 1.3, randomFloat(40) + r.forwardDistance + 20, randomFloat(9) - 4.5));
   }
   //If coin is collected then remove it from the game (the vector)
   for (std::size_t i = 0; i < v.size(); i++) {
 	  //Obstacles are 1 unit wide (0.5) and rocket is 0.3 units wide (0.15)
-    if (inRangeY(v.at(i).position.mY + 0.65, v.at(i).position.mY - 0.65, r)
+    if (inRangeX(v.at(i).position.mX + 0.65, v.at(i).position.mX - 0.65, r)
+      && inRangeY(v.at(i).position.mY + 0.65, v.at(i).position.mY - 0.65, r)
 		  && inRangeZ(v.at(i).position.mZ + 0.65, v.at(i).position.mZ - 0.65, r)) {
 	    //if collision: remove coin from game and increment coins total
 	    v.erase(v.begin() + i);

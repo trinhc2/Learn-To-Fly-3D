@@ -14,7 +14,6 @@ public:
     float r;
     float g;
     float b;
-    int material;
     float age;
     Particle(Point3D point);
 };

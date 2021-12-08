@@ -18,12 +18,11 @@ Particle::Particle(Point3D point) {
     r = 1.0;
     g = randomFloat(0.4);
     b = 0;
-    material = rand() % 3;
     age = 2;
 }
 
 ParticleSystem::ParticleSystem() {
-    origin = Point3D(0.5, -5.40, 0);
+    origin = Point3D(0, -5.38, 0.025);
 
 }
 
@@ -43,8 +42,9 @@ void ParticleSystem::update(Rocket& r) {
 
 
         }
-    origin.mZ = r.zOffset + 0.05;
-	origin.mY = r.forwardDistance - 5.40;
+    origin.mX = r.position.mX;
+    origin.mZ = r.zOffset + 0.025;
+	origin.mY = r.forwardDistance - 5.38;
     Particle p = Particle(origin);
     v.push_back(p);
 }

@@ -26,11 +26,12 @@ void ObstacleSystem::update(Rocket &r) {
 	//randomFloat(40) to spread them apart
 	//randomFloat(9) - 4.5 generates number between -4.5 and 4.5 which is the range our rocket can reach;
 	//generate obstacle of random types from all supported types
-	v.push_back(Obstacle(Point3D(0.5, randomFloat(40) + r.forwardDistance + 20, randomFloat(9) - 4.5), 1, rand() % 2));
+	v.push_back(Obstacle(Point3D(randomFloat(2.6) - 1.3, randomFloat(40) + r.forwardDistance + 20, randomFloat(9) - 4.5), 1, rand() % 2));
   }
   //If obstacle is destroyed then remove it from the game (the vector)
   for (std::size_t i = 0; i < v.size(); i++) {
-	if (inRangeY(v.at(i).position.mY + 0.65, v.at(i).position.mY - 0.65, r)
+	if (inRangeX(v.at(i).position.mX + 0.65, v.at(i).position.mX - 0.65, r)
+    && inRangeY(v.at(i).position.mY + 0.65, v.at(i).position.mY - 0.65, r)
 		&& inRangeZ(v.at(i).position.mZ + 0.65, v.at(i).position.mZ - 0.65, r)) {
 
 	  // regular obstacle will deduct rocket's fuel upon collision

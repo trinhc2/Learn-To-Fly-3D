@@ -13,6 +13,7 @@ class Rocket {
   float initialFuel;
   float fuel; //Fuel in tank
   float zOffset; //Rockets z position as a result from turning
+  float xOffset;
   float forwardDistance; //how much the rocket has traveled
   float forwardSpeed;
   float turningSpeed;

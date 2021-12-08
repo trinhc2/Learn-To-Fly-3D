@@ -10,16 +10,17 @@
 #include <string>
 
 Rocket::Rocket() {
-  position = Point3D(0.5, -5.45, zOffset);
+  position = Point3D(-1.3, -5.45, zOffset);
   angle = 0;
   fuelUpgrades = 0;
   initialFuel = 100;
   fuel = 0;
   coins = 0;
   zOffset = 0;
+  xOffset = 0;
   forwardDistance = 0;
   forwardSpeed = 0.1;
-  turningSpeed = 0.2;
+  turningSpeed = 0.1;
   collisionFuelPenalty = 20;
 }
 
@@ -32,6 +33,7 @@ void Rocket::update() {
 	fuel = 0;
   }
   position.mZ = zOffset;
+  position.mX = -1.3 + xOffset;
 }
 
 bool Rocket::loadRocketObj(const char* path) {
