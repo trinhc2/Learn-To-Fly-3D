@@ -32,12 +32,40 @@ float obsHitAge = 0;
 float coinGetAge = 0;
 Screen screen = menu; //screen state
 
+float rocketAmbient[4] ={ 0.19225f, 0.19225f, 0.19225f, 1.0f };
+float rocketDiffuse[4] ={ 0.50754f, 0.50754f, 0.50754f, 1.0f};
+float rocketSpecular[4] ={0.508273f, 0.508273f, 0.508273f, 1.0f };
+float rocketShine = 51.2f;
+
+float coinAmbient[4] ={ 0.24725f, 0.1995f, 0.0745f, 1.0f };
+float coinDiffuse[4] ={0.75164f, 0.60648f, 0.22648f, 1.0f };
+float coinSpecular[4] ={0.628281f, 0.555802f, 0.366065f, 1.0f };
+float coinShine =51.2f ;
+
+float obstacleAmbient[4] ={ 0.05375f, 0.05f, 0.06625f, 0.82f };
+float obstacleDiffuse[4] ={ 0.18275f, 0.17f, 0.22525f, 0.82f};
+float obstacleSpecular[4] ={0.332741f, 0.328634f, 0.346435f, 0.82f };
+float obstacleShine =38.4f ;
+
+float particleAmb[3][4] = { {1.0f, 0.1f, 0.0f, 1.0f}, {1.0f, 0.4f, 0.0f, 1.0f}, {1.0f, 0.2f, 0.0f, 1.0f} };
+float particleDiff[3][4] = { {1.0f, 0.1f, 0.0f, 1.0f}, {1.0f, 0.4f, 0.0f, 1.0f}, {1.0f, 0.2f, 0.0f, 1.0f} };
+float particleSpec[3][4] = { {1.0f, 0.1f, 0.0f, 1.0f}, {1.0f, 0.4f, 0.0f, 1.0f}, {1.0f, 0.2f, 0.0f, 1.0f}};
+
+float ambientDefault[4] = {0.2, 0.2, 0.2, 1.0} ;
+float diffuseDefault[4] = {0.8, 0.8, 0.8, 1.0} ;
+float specularDefault[4] = {0, 0, 0, 1};
+
 void *font = GLUT_BITMAP_HELVETICA_18; //Font which is used for glutBitMapCharacter
 
 Rocket rocket = Rocket();
 CoinSystem coinSystem = CoinSystem();
 ObstacleSystem obstacleSystem = ObstacleSystem();
 ParticleSystem parSys = ParticleSystem();
+
+float position[4] = {1,5 + rocket.forwardDistance,0,1};
+float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
+float diffuse[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+float specular[4] ={ 1.0f, 1.0f, 1.0f, 1.0f };
 
 float maxForwardingDistance = 0; // Used to keep track of player score
 
@@ -148,14 +176,22 @@ void displayObj(std::string name) {
  * Draws the rocket to screen
  */
 void drawRocket(Rocket rocket) {
-  	glColor3f(1, 0, 0);
   	glBindTexture(GL_TEXTURE_2D, texture_map[2]);
   	glPushMatrix();
+
+    glColor3f(0.60, 0.61, 0.62);//grey/silver colour
+
+    //setting material
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, rocketAmbient);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rocketDiffuse);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, rocketSpecular);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, rocketShine);
+    
     //Place the rocket at its position + how much it has traveled
     glTranslatef(rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ);
     //Rotate the rocket if it has been turning
-	glRotatef(2.5, 1, 0, 0); //points rocket more to the left so it pointing forwards by default
-	glRotatef(-10, 0, 1, 0); //rotates rocket along y so it is not on a diagonal by default
+    glRotatef(2.5, 1, 0, 0); //points rocket more to the left so it pointing forwards by default
+    glRotatef(-10, 0, 1, 0); //rotates rocket along y so it is not on a diagonal by default
     glRotatef(rocket.angle, -1, 1, 0);
     //Scales the rocket size down, scales can be updated in future
     glScalef(0.3, 0.3, 0.3);
@@ -170,13 +206,17 @@ void drawRocket(Rocket rocket) {
  */
 void drawCoins(CoinSystem coinSystem) {
   glBindTexture(GL_TEXTURE_2D, texture_map[0]);
+  glColor3f(1, 1, 0);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, coinAmbient);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, coinDiffuse);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, coinSpecular);
+  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, coinShine);
   for (std::size_t i = 0; i < coinSystem.v.size(); i++) {
-	glColor3f(1, 1, 0);
-	glPushMatrix();
-    glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
-    glRotatef(coinSystem.rotation, 1, 0, 0);
-    displayObj("coin");
-	glPopMatrix();
+    glPushMatrix();
+      glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
+      glRotatef(coinSystem.rotation, 1, 0, 0);
+      displayObj("coin");
+    glPopMatrix();
   }
   // Reset texture binding after finishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -187,8 +227,13 @@ void drawCoins(CoinSystem coinSystem) {
  */
 void drawObstacles(ObstacleSystem obstacleSystem) {
   glBindTexture(GL_TEXTURE_2D, texture_map[1]);
+  glColor3f(0, 1, 0);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, obstacleAmbient);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, obstacleDiffuse);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, obstacleSpecular);
+  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, obstacleShine);
+
   for (std::size_t i = 0; i < obstacleSystem.v.size(); i++) {
-    glColor3f(0, 1, 0);
     glPushMatrix();
       glTranslatef(obstacleSystem.v.at(i).position.mX,
             obstacleSystem.v.at(i).position.mY,
@@ -207,10 +252,18 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
 void drawParticles(ParticleSystem parSys) {
     if (parSys.v.size() > 0) {
         for(Particle p: parSys.v){
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, particleAmb[p.material]);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, particleDiff[p.material]);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, particleSpec[p.material]);
+            glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
+
+            std::cout << particleAmb[p.material][1] << "\n";
             glPushMatrix();
-			glTranslatef(p.position.mX, p.position.mY, p.position.mZ);
-            glScalef(0.05,0.05,0.05);
             glColor3f(p.r, p.g, p.b);
+          
+            
+			      glTranslatef(p.position.mX, p.position.mY, p.position.mZ);
+            glScalef(0.05,0.05,0.05);
             glutSolidCube(p.size);
             glPopMatrix();
         }
@@ -233,7 +286,13 @@ void display(void) {
   if (screen == game) { //If state of screen is on game, draw the game
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    glLoadIdentity();    
+
+    //defining light properties
+    glLightfv(GL_LIGHT0, GL_POSITION, position);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 
     //For testing
     if (cameraToggle) {
@@ -243,19 +302,36 @@ void display(void) {
       gluLookAt(2, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
     }
 
-    glColor3f(0, 0, 1);
 
     //Draws the ground plane
     glPushMatrix();
     // make y arbitrarily high to simulate an infinite long road ahead
-    glScalef(0.1, 10000, 10);
-    glutSolidCube(1);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
+      glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+      glColor3f(0, 0, 1);
+      glScalef(0.1, 10000, 10);
+      glutSolidCube(1);
+    glPopMatrix();
+
+    //Visualization of where the lightsource is
+    glPushMatrix();
+      glTranslatef(position[0], position[1] + rocket.forwardDistance, 0);
+      glutSolidSphere(0.1,10,10);
     glPopMatrix();
 
     drawRocket(rocket);
     drawObstacles(obstacleSystem);
     drawCoins(coinSystem);
     drawParticles(parSys);
+    
+
+      //set materials back to default
+      //glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
+      //glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
+      //glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
+      //glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
 
     /**
     * Displays Text
@@ -381,16 +457,30 @@ void keyboard(unsigned char key, int x, int y) {
 		exit(0);
 		break;
 	  case 32: //space bar
-		rocket.forwardDistance = 0;
-		rocket.zOffset = 0;
-		rocket.fuel += rocket.initialFuel + rocket.fuelUpgrades;
-		rocket.angle = 0;
-		screen = game;
+      //disable lighting for menu
+      glEnable(GL_LIGHTING);
+      glEnable(GL_LIGHT0);
+      glClearColor(0.4, 0.79, 1, 1); //change background to sky blue
+
+      //reset rocket
+      rocket.forwardDistance = 0;
+      rocket.zOffset = 0;
+      rocket.fuel = rocket.initialFuel + rocket.fuelUpgrades;
+      rocket.angle = 0;
+      parSys.origin.mY = -5.40;
+
+      //reset object lists
+      coinSystem.v.clear();
+      obstacleSystem.v.clear();
+
+      //reset light
+      //position[1] = 3;
+      screen = game;
 		break;
 	  case '1':
 		if (rocket.coins >= 100) {
 		  rocket.coins -= 100;
-		  rocket.fuel += 100;
+		  rocket.fuelUpgrades += 100;
 		}
 		break;
 	case '2':
@@ -411,8 +501,12 @@ void FPS(int val) {
     coinSystem.update(rocket);
     obstacleSystem.update(rocket);
     parSys.update(rocket);
+
     if (rocket.fuel <= 0) {
       screen = menu;
+      glClearColor(0,0,0,1); //change background to black
+      glDisable(GL_LIGHTING); //disable lights
+      glDisable(GL_LIGHT0);
     }
 	//If obstacle has been hit, decrement the amount of time the text stays on the screen
 	if (obstacleHit) {
@@ -523,7 +617,7 @@ void init(void) {
   // Temporarily using some ppms from lecture, will replace with proper textures later
   loadTexture("lenore.ppm", 0);
   loadTexture("snail_a.ppm", 1);
-  loadTexture("marble.ppm", 2);
+  loadTexture("./assets/rocket/steel.ppm", 2);
 
   glMatrixMode(GL_TEXTURE);
   glScalef(1,-1,-1);
@@ -544,9 +638,11 @@ int main(int argc, char **argv) {
 
   glEnable(GL_DEPTH_TEST);
 
-  glFrontFace(GL_CW);
-  glCullFace(GL_FRONT);
-  glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
+    glCullFace(GL_FRONT);
+    glEnable(GL_CULL_FACE);
+    glShadeModel(GL_SMOOTH);
+  
 
   init();
 

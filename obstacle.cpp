@@ -31,7 +31,14 @@ void ObstacleSystem::update(Rocket& r) {
 		  && inRangeZ(v.at(i).position.mZ + 0.65, v.at(i).position.mZ - 0.65, r)) {
 	    //if collision: remove obstacle from game and decrement fuel total
 	    v.erase(v.begin() + i);
-      r.fuel -= r.collisionFuelPenalty;
+
+      if (r.fuel > r.collisionFuelPenalty) {
+        r.fuel -= r.collisionFuelPenalty;
+      }
+      else {
+        r.fuel = 0;
+      }
+
       obstacleHit = true; //Tell game obstacle has been hit
       obsHitAge = 3; //Set time for text to display on screen
 	  }

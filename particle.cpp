@@ -18,6 +18,7 @@ Particle::Particle(Point3D point) {
     r = 1.0;
     g = randomFloat(0.4);
     b = 0;
+    material = rand() % 3;
     age = 2;
 }
 
