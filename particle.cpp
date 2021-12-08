@@ -30,7 +30,7 @@ ParticleSystem::ParticleSystem() {
 void ParticleSystem::update(Rocket& r) {
         for(std::size_t i=0; i<v.size(); i++){
             Vec3D direction = v.at(i).direction.normalize();
-            
+
             v.at(i).position.mX += direction.mX * v.at(i).speed;
             v.at(i).position.mY += direction.mY * v.at(i).speed;
             v.at(i).position.mZ += direction.mZ * v.at(i).speed;
@@ -42,9 +42,9 @@ void ParticleSystem::update(Rocket& r) {
             }
 
 
-        }    
+        }
     origin.mZ = r.zOffset + 0.05;
-    origin.mY += r.forwardSpeed;
+	origin.mY = r.forwardDistance - 5.40;
     Particle p = Particle(origin);
     v.push_back(p);
 }

@@ -228,7 +228,7 @@ void drawCoins(CoinSystem coinSystem) {
 	displayObj("coin");
 	glPopMatrix();
   }
-  // Reset texture binding after finishing draw
+  // Reset texture binding after obstacle.cppfinishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -244,12 +244,16 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
   glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, obstacleShine);
 
   for (std::size_t i = 0; i < obstacleSystem.v.size(); i++) {
+	Obstacle obstacle = obstacleSystem.v.at(i);
 	glPushMatrix();
-	glTranslatef(obstacleSystem.v.at(i).position.mX,
-				 obstacleSystem.v.at(i).position.mY,
-				 obstacleSystem.v.at(i).position.mZ);
+	glTranslatef(obstacle.position.mX,
+				 obstacle.position.mY,
+				 obstacle.position.mZ);
+	//TODO: temp: larger obstacle == bomb obstacle. Need to apply a different texture for it later on
+	if (obstacle.type == 1) {
+	  glScalef(2, 1, 1);
+	}
 	displayObj("obstacle");
-	// glutSolidCube(obstacleSystem.v.at(i).size);
 	glPopMatrix();
   }
   // Reset texture binding after finishing draw
@@ -668,6 +672,7 @@ void init(void) {
   loadTexture("lenore.ppm", 0);
   loadTexture("snail_a.ppm", 1);
   loadTexture("./assets/rocket/steel.ppm", 2);
+//  loadTexture("bomb.ppm", 3);
 
   glMatrixMode(GL_TEXTURE);
   glScalef(1, -1, -1);
