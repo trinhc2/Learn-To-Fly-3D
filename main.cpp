@@ -59,7 +59,8 @@ void *font = GLUT_BITMAP_HELVETICA_18; //Font which is used for glutBitMapCharac
 Rocket rocket = Rocket();
 CoinSystem coinSystem = CoinSystem();
 ObstacleSystem obstacleSystem = ObstacleSystem();
-ParticleSystem parSys = ParticleSystem();
+ParticleSystem rocketFlame = ParticleSystem();
+std::vector<Particle> explosion; //bomb explosion particles
 
 float position[4] = {1, 2 + rocket.forwardDistance, 0, 1};
 float ambient[4] = {0.2f, 0.2f, 0.2f, 1.0f};
@@ -233,23 +234,24 @@ void drawCoins(CoinSystem coinSystem) {
 void drawObstacles(ObstacleSystem obstacleSystem) {
   glBindTexture(GL_TEXTURE_2D, texture_map[1]);
   glColor3f(0, 1, 0);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, obstacleAmbient);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, obstacleDiffuse);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, obstacleSpecular);
-  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, obstacleShine);
 
   for (std::size_t i = 0; i < obstacleSystem.v.size(); i++) {
-	Obstacle obstacle = obstacleSystem.v.at(i);
-	glPushMatrix();
-	glTranslatef(obstacle.position.mX,
-				 obstacle.position.mY,
-				 obstacle.position.mZ);
-	//TODO: temp: larger obstacle == bomb obstacle. Need to apply a different texture for it later on
-	if (obstacle.type == 1) {
-	  glScalef(2, 1, 1);
-	}
-	displayObj("obstacle");
-	glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, obstacleAmbient);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, obstacleDiffuse);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, obstacleSpecular);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, obstacleShine);
+
+    Obstacle obstacle = obstacleSystem.v.at(i);
+    glPushMatrix();
+      glTranslatef(obstacle.position.mX,
+            obstacle.position.mY,
+            obstacle.position.mZ);
+      //TODO: temp: larger obstacle == bomb obstacle. Need to apply a different texture for it later on
+      if (obstacle.type == 1) {
+        glScalef(2, 1, 1);
+      }
+      displayObj("obstacle");
+    glPopMatrix();
   }
   // Reset texture binding after finishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -258,7 +260,7 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
 /**
  * Draws Rocket trail 
  */
-void drawParticles(ParticleSystem parSys) {
+void drawParticles(std::vector<Particle> v) {
   //bind fire texture
   glBindTexture(GL_TEXTURE_2D, texture_map[0]);
 
@@ -268,12 +270,13 @@ void drawParticles(ParticleSystem parSys) {
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
 
-  if (parSys.v.size() > 0) {
-    for (Particle p: parSys.v) {
+  if (v.size() > 0) {
+    for (Particle p: v) {
       glPushMatrix();
       glColor3f(p.r, p.g, p.b);
 
       glTranslatef(p.position.mX, p.position.mY, p.position.mZ);
+
       glScalef(0.05, 0.05, 0.05);
       glutSolidCube(p.size);
       glPopMatrix();
@@ -335,7 +338,7 @@ void display(void) {
 	  gluLookAt(0, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
 	}
 
-
+  
 	// make y arbitrarily high to simulate an infinite long road ahead
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
@@ -354,7 +357,8 @@ void display(void) {
   
   glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube
   glEnable(GL_TEXTURE_GEN_T);
-	drawParticles(parSys);
+	drawParticles(rocketFlame.v);
+  drawParticles(explosion);
   glDisable(GL_TEXTURE_GEN_S);
   glDisable(GL_TEXTURE_GEN_T);
   
@@ -493,14 +497,12 @@ void keyboard(unsigned char key, int x, int y) {
     case 'w': //raises rocket
       if (rocket.position.mX < 1.3) {
         rocket.xOffset += rocket.turningSpeed;
-        std::cout << rocket.position.mX << "\n";
       }
       break;
       
     case 's': //lowers rocket
       if (rocket.position.mX > -1.3) {
         rocket.xOffset -= rocket.turningSpeed;
-        std::cout << rocket.position.mX << "\n";
       }
       break;
 	  case 'a':
@@ -541,7 +543,7 @@ void keyboard(unsigned char key, int x, int y) {
     rocket.xOffset = 0;
 		rocket.fuel = rocket.initialFuel + rocket.fuelUpgrades;
 		rocket.angle = 0;
-		parSys.origin.mY = -5.40;
+		rocketFlame.origin.mY = -5.40;
 
 		//reset object lists
 		coinSystem.v.clear();
@@ -587,8 +589,8 @@ void FPS(int val) {
 	  breakRecord = true;
 	}
 	coinSystem.update(rocket);
-	obstacleSystem.update(rocket);
-	parSys.update(rocket);
+	obstacleSystem.update(rocket, explosion, rocketFlame.v);
+	rocketFlame.update(rocket);
 
 	if (rocket.fuel <= 0) {
 	  screen = menu;

@@ -1,6 +1,7 @@
 #include "particle.h"
 #include "main.h"
 #include <iostream>
+
 Particle::Particle(Point3D point) {
     //Generate x and z directions
     position = point;
@@ -21,9 +22,15 @@ Particle::Particle(Point3D point) {
     age = 2;
 }
 
+Particle::Particle() { //constructor for explosion
+    direction = Vec3D(randomFloat(2) - 1,randomFloat(2) - 1,randomFloat(2) - 1); //random outwards direction
+    speed = 0.05;
+    size = 2;
+    age = 0.5;
+}
+
 ParticleSystem::ParticleSystem() {
     origin = Point3D(0, -5.38, 0.025);
-
 }
 
 void ParticleSystem::update(Rocket& r) {

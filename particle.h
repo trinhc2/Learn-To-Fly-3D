@@ -16,6 +16,7 @@ public:
     float b;
     float age;
     Particle(Point3D point);
+    Particle();
 };
 
 class ParticleSystem {
