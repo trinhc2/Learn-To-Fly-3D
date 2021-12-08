@@ -19,6 +19,7 @@ Rocket::Rocket() {
   zOffset = 0;
   forwardDistance = 0;
   forwardSpeed = 0.1;
+  turningSpeed = 0.2;
   collisionFuelPenalty = 20;
 }
 

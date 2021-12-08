@@ -447,7 +447,10 @@ void display(void) {
 	drawText("(1) 100 Coins: Increase Fuel by 100");
 
 	glRasterPos2i(10, 450);
-	drawText("(2) 100 Coins: Increase Speed");
+	drawText("(2) 100 Coins: Increase Forward Speed");
+
+	glRasterPos2i(10, 400);
+	drawText("(3) 100 Coins: Increase Turning Speed");
 
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -469,7 +472,7 @@ void keyboard(unsigned char key, int x, int y) {
 	  case 'a':
 		//Turn the rocket left and rotates
 		if (rocket.zOffset < 4.5) {
-		  rocket.zOffset += 0.2;
+		  rocket.zOffset += rocket.turningSpeed;
 		  rocket.angle -= 1;
 
 		}
@@ -477,7 +480,7 @@ void keyboard(unsigned char key, int x, int y) {
 	  case 'd':
 		//Turn the rocket right and rotates
 		if (rocket.zOffset > -4.5) {
-		  rocket.zOffset -= 0.2;
+		  rocket.zOffset -= rocket.turningSpeed;
 		  rocket.angle += 1;
 
 		}
@@ -527,6 +530,12 @@ void keyboard(unsigned char key, int x, int y) {
 		if (rocket.coins >= 100) {
 		  rocket.coins -= 100;
 		  rocket.forwardSpeed += 0.1;
+		}
+		break;
+	  case '3':
+		if (rocket.coins >= 100) {
+		  rocket.coins -= 100;
+		  rocket.turningSpeed += 0.1;
 		}
 		break;
 	}

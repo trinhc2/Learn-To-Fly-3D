@@ -15,6 +15,7 @@ class Rocket {
   float zOffset; //Rockets z position as a result from turning
   float forwardDistance; //how much the rocket has traveled
   float forwardSpeed;
+  float turningSpeed;
   int collisionFuelPenalty; // how much fuel to decrement as a penalty of colliding with obstacles
   int coins; //coins gathered
   Rocket();
