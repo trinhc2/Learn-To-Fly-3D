@@ -21,7 +21,7 @@
 #endif
 
 //States for the game
-enum Screen { game, menu };
+enum Screen { game, menu, win };
 
 bool cameraToggle = false;
 
@@ -32,6 +32,9 @@ float obsHitAge = 0;
 float coinGetAge = 0;
 // flag for breaking the previous record
 bool breakRecord = false;
+bool infinite = false; //if inifinite is true then the game goes on forever
+
+float moonLocation = 20;
 
 Screen screen = menu; //screen state
 
@@ -72,7 +75,7 @@ float prevMaxForwardingDistance = 0; // used to keep track max player score from
 
 // Textures
 GLubyte *img_data[3];
-GLuint texture_map[3];
+GLuint texture_map[4];
 int width[3];
 int height[3];
 int max[3];
@@ -212,6 +215,7 @@ void drawRocket(Rocket rocket) {
  * Draws the coins to the screen
  */
 void drawCoins(CoinSystem coinSystem) {
+	glBindTexture(GL_TEXTURE_2D, 0);
   glColor3f(1, 1, 0);
   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, coinAmbient);
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, coinDiffuse);
@@ -312,6 +316,13 @@ void drawPreviousMaxScoreIndicatorLine() {
 
 void display(void) {
   if (screen == game) { //If state of screen is on game, draw the game
+
+	//calculate background colour based on forward distance * base value
+	//base value is determined by 1/250 meaning that at 250 forward distance the background is black (space).
+  	glClearColor(0.4 - (rocket.forwardDistance * 0.004), 0.79 - (rocket.forwardDistance * 0.004), 1 - (rocket.forwardDistance * 0.004), 1);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -355,12 +366,24 @@ void display(void) {
 	drawObstacles(obstacleSystem);
 	drawCoins(coinSystem);
   
-  glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube
-  glEnable(GL_TEXTURE_GEN_T);
+	glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube
+	glEnable(GL_TEXTURE_GEN_T);
 	drawParticles(rocketFlame.v);
-  drawParticles(explosion);
-  glDisable(GL_TEXTURE_GEN_S);
-  glDisable(GL_TEXTURE_GEN_T);
+	drawParticles(explosion);
+
+	//Drawing moon at y=100
+	if (!infinite) {
+		glPushMatrix();
+			glBindTexture(GL_TEXTURE_2D, texture_map[3]);
+			glTranslatef(0, moonLocation, 0);
+			glutSolidSphere(3,10,10);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		glPopMatrix();
+	}
+
+
+	glDisable(GL_TEXTURE_GEN_S);
+	glDisable(GL_TEXTURE_GEN_T);
   
 	drawPreviousMaxScoreIndicatorLine();
 
@@ -389,12 +412,12 @@ void display(void) {
 	//Display Fuel
 	glPushMatrix();
 	glLoadIdentity();
-  //set colour to white
+  	//set colour to white
 	glColor3f(1, 1, 1);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[2]);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[2]);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[2]);
-  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[2]);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[2]);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[2]);
+	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
 
 	glRasterPos2i(10, 10);
 	std::string fuelDisplay = "Fuel: " + std::to_string(rocket.fuel);
@@ -408,26 +431,26 @@ void display(void) {
 
 	//If an obstacle has been hit, display affect to fuel amount
 	if (obstacleHit) {
-	  glColor3f(1, 0, 0);
-    //set colour to red
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[0]);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[0]);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[0]);
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-	  glRasterPos2i(150, 10);
-	  drawText("-20");
-    
+	  	glColor3f(1, 0, 0);
+    	//set colour to red
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[0]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[0]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[0]);
+		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+	  	glRasterPos2i(150, 10);
+	  	drawText("-20");
 	}
+
 	//If a coin has been collected, display affect to coin amount
 	if (coinGet) {
-	  glColor3f(0, 1, 0);
-    //set colour to green
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[1]);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[1]);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[1]);
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-	  glRasterPos2i(110, 580);
-	  drawText("+100");
+		glColor3f(0, 1, 0);
+		//set colour to green
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[1]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[1]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[1]);
+		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+		glRasterPos2i(110, 580);
+		drawText("+100");
 	}
 	// If the previous record has been broken, display the text to the user on the game screen
 	if (breakRecord) {
@@ -444,6 +467,10 @@ void display(void) {
 
 	glutSwapBuffers();
   } else if (screen == menu) { //if state of screen is on menu, draw the menu
+  	glClearColor(0, 0, 0, 1); //change background to black
+	glDisable(GL_LIGHTING); //disable lights
+	glDisable(GL_LIGHT0);
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glMatrixMode(GL_PROJECTION);
@@ -475,6 +502,40 @@ void display(void) {
 
 	glRasterPos2i(10, 400);
 	drawText("(3) 100 Coins: Increase Turning Speed");
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	glutSwapBuffers();
+  }
+  else if (screen == win) {
+	glClearColor(0, 0, 0, 1); //change background to black
+	glDisable(GL_LIGHTING); //disable lights
+	glDisable(GL_LIGHT0);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0.0, 600, 0.0, 600);
+	glMatrixMode(GL_MODELVIEW);
+
+	glPushMatrix();
+	glLoadIdentity();
+
+	glColor3f(1, 1, 1);
+
+	glRasterPos2i(260, 340);
+	drawText("You Win!");
+
+	glRasterPos2i(150, 300);
+	drawText("Press Space Bar to continue playing!");
+
+	glRasterPos2i(175, 260);
+	drawText("Press Escape to continue Quit");
 
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -532,15 +593,11 @@ void keyboard(unsigned char key, int x, int y) {
 		exit(0);
 		break;
 	  case 32: //space bar
-		//disable lighting for menu
-		glEnable(GL_LIGHTING);
-		glEnable(GL_LIGHT0);
-		glClearColor(0.4, 0.79, 1, 1); //change background to sky blue
 
 		//reset rocket
 		rocket.forwardDistance = 0;
 		rocket.zOffset = 0;
-    rocket.xOffset = 0;
+    	rocket.xOffset = 0;
 		rocket.fuel = rocket.initialFuel + rocket.fuelUpgrades;
 		rocket.angle = 0;
 		rocketFlame.origin.mY = -5.40;
@@ -548,12 +605,11 @@ void keyboard(unsigned char key, int x, int y) {
 		//reset object lists
 		coinSystem.v.clear();
 		obstacleSystem.v.clear();
+		rocketFlame.v.clear();
 
 		//reset breakRecord flag
 		breakRecord = false;
 
-		//reset light
-		//position[1] = 3;
 		screen = game;
 		break;
 	  case '1':
@@ -576,6 +632,37 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	}
   }
+  else if (screen == win) {
+	switch (key) {
+	  case 'q':exit(0);
+		break;
+
+	  case 27: //escape
+		exit(0);
+		break;
+	  case 32: //space bar
+
+		//reset rocket
+		infinite = true;
+		rocket.forwardDistance = 0;
+		rocket.zOffset = 0;
+    	rocket.xOffset = 0;
+		rocket.fuel = rocket.initialFuel + rocket.fuelUpgrades;
+		rocket.angle = 0;
+		rocketFlame.origin.mY = -5.40;
+
+		//reset object lists
+		coinSystem.v.clear();
+		obstacleSystem.v.clear();
+		rocketFlame.v.clear();
+
+		//reset breakRecord flag
+		breakRecord = false;
+
+		screen = game;
+		break;
+	}
+  }
   glutPostRedisplay();
 }
 
@@ -594,9 +681,7 @@ void FPS(int val) {
 
 	if (rocket.fuel <= 0) {
 	  screen = menu;
-	  glClearColor(0, 0, 0, 1); //change background to black
-	  glDisable(GL_LIGHTING); //disable lights
-	  glDisable(GL_LIGHT0);
+	
 	}
 	//If obstacle has been hit, decrement the amount of time the text stays on the screen
 	if (obstacleHit) {
@@ -614,6 +699,15 @@ void FPS(int val) {
 	if (coinGetAge < 0) {
 	  coinGet = false;
 	}
+
+	if (!infinite) {
+		if (inRangeX(3.15, -3.15, rocket)
+			&& inRangeY(moonLocation + 3.15, moonLocation - 3.15, rocket)
+			&& inRangeZ(3.15,-3.15, rocket)) {
+				screen = win;
+		}
+	}
+
 
   } else if (screen == menu) {
 
@@ -710,12 +804,13 @@ void init(void) {
   obstacleSystem.loadObstacleObj("./assets/obstacle/obstacle.obj");
 
   glEnable(GL_TEXTURE_2D);
-  glGenTextures(3, texture_map);
+  glGenTextures(4, texture_map);
 
   // Temporarily using some ppms from lecture, will replace with proper textures later
   loadTexture("./assets/particle/fire.ppm", 0);
   loadTexture("snail_a.ppm", 1);
   loadTexture("./assets/rocket/steel.ppm", 2);
+  loadTexture("./assets/moon/moon.ppm", 3);
 //  loadTexture("bomb.ppm", 3);
 
   glMatrixMode(GL_TEXTURE);
