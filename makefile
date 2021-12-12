@@ -22,10 +22,12 @@ else
 	        LDFLAGS = -framework Carbon -framework OpenGL -framework GLUT
 	endif
 endif
+
 all: main
 
 main:
-	$(CC) -o main main.cpp mathLib2d.cpp mathLib3D.cpp objLoader.cpp coin.cpp rocket.cpp obstacle.cpp particle.cpp $(CFLAGS) $(LDFLAGS)
+	$(CC) -o main main.cpp mathLib2d.cpp mathLib3D.cpp objLoader.cpp coin.cpp rocket.cpp obstacle.cpp particle.cpp $(CFLAGS) $(LDFLAGS) 
+	./main$(EXEEXT)
 
 clean:
 	rm -f main
