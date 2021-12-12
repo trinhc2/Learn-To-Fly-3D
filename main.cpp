@@ -8,6 +8,8 @@
 #include "rocket.h"
 #include "obstacle.h"
 #include "particle.h"
+#include "sceneObject.h"
+#include "bird.h"
 #include <string>
 
 #ifdef __APPLE__
@@ -140,30 +142,8 @@ float randomFloat(float x) {
 }
 
 // Display obj
-void displayObj(std::string name) {
-  std::vector<Point3D> out_vertices;
-  std::vector<Vec3D> out_normals;
-  std::vector<Point2D> out_uvs;
-  int size;
-
-  // Note: vertexIndices, uvIndices, and normalIndices all have the same value
-  if (name.compare("rocket") == 0) {
-    out_vertices = rocket.out_vertices;
-    out_normals = rocket.out_normals;
-    out_uvs = rocket.out_uvs;
-    size = rocket.vertexIndices.size();
-  } else if (name.compare("coin") == 0) {
-    out_vertices = coinSystem.out_vertices;
-    out_normals = coinSystem.out_normals;
-    out_uvs = coinSystem.out_uvs;
-    size = coinSystem.vertexIndices.size();
-  } else if (name.compare("obstacle") == 0) {
-    out_vertices = obstacleSystem.out_vertices;
-    out_normals = obstacleSystem.out_normals;
-    out_uvs = obstacleSystem.out_uvs;
-    size = obstacleSystem.vertexIndices.size();
-  }
-
+void displayObj(std::vector<Point3D> out_vertices, std::vector<Vec3D> out_normals,
+               std::vector<Point2D> out_uvs, int size) {
   // Draw triangles based on the vertices we read from our obj file
   // Each face consists of <vertex1, texture1, normal1, vertex2, texture2, normal2, vertex3, texture3, normal3>
   // That means we can loop through our "out" vectors and generate a bunch of vertices with normal and texture coords
@@ -210,7 +190,8 @@ void drawRocket(Rocket rocket) {
   glRotatef(rocket.angle, -1, 1, 0);
   //Scales the rocket size down, scales can be updated in future
   glScalef(0.3, 0.3, 0.3);
-  displayObj("rocket");
+  // Display rocket obj
+  displayObj(rocket.out_vertices, rocket.out_normals, rocket.out_uvs, rocket.vertexIndices.size());
   glPopMatrix();
   // Reset texture binding after finishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -229,7 +210,7 @@ void drawCoins(CoinSystem coinSystem) {
     glPushMatrix();
     glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
     glRotatef(coinSystem.rotation, 1, 0, 0);
-    displayObj("coin");
+    displayObj(coinSystem.out_vertices, coinSystem.out_normals, coinSystem.out_uvs, coinSystem.vertexIndices.size());
     glPopMatrix();
   }
   // Reset texture binding after obstacle.cppfinishing draw
@@ -258,7 +239,7 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
       if (obstacle.type == 1) {
         glScalef(2, 1, 1);
       }
-      displayObj("obstacle");
+      displayObj(obstacleSystem.out_vertices, obstacleSystem.out_normals, obstacleSystem.out_uvs, obstacleSystem.vertexIndices.size());
     glPopMatrix();
   }
   // Reset texture binding after finishing draw
