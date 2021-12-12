@@ -1,3 +1,6 @@
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <limits>
 #include <iostream>
 #include <algorithm>
 #include "mathLib3D.h"
@@ -24,6 +27,7 @@
 enum Screen { game, menu };
 
 bool cameraToggle = false;
+bool paused = false;
 
 //Detection for coin/obstacles, will display text for a certain amount of time (age value is decremented in FPS)
 bool coinGet = false;
@@ -69,6 +73,10 @@ float specular[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
 float maxForwardingDistance = 0; // Used to keep track of player score
 float prevMaxForwardingDistance = 0; // used to keep track max player score from previous plays
+
+// global variables for ray casting & ray picking
+double *m_start = new double[3];
+double *m_end = new double[3];
 
 // Textures
 GLubyte *img_data[3];
@@ -140,20 +148,20 @@ void displayObj(std::string name) {
 
   // Note: vertexIndices, uvIndices, and normalIndices all have the same value
   if (name.compare("rocket") == 0) {
-	out_vertices = rocket.out_vertices;
-	out_normals = rocket.out_normals;
-	out_uvs = rocket.out_uvs;
-	size = rocket.vertexIndices.size();
+    out_vertices = rocket.out_vertices;
+    out_normals = rocket.out_normals;
+    out_uvs = rocket.out_uvs;
+    size = rocket.vertexIndices.size();
   } else if (name.compare("coin") == 0) {
-	out_vertices = coinSystem.out_vertices;
-	out_normals = coinSystem.out_normals;
-	out_uvs = coinSystem.out_uvs;
-	size = coinSystem.vertexIndices.size();
+    out_vertices = coinSystem.out_vertices;
+    out_normals = coinSystem.out_normals;
+    out_uvs = coinSystem.out_uvs;
+    size = coinSystem.vertexIndices.size();
   } else if (name.compare("obstacle") == 0) {
-	out_vertices = obstacleSystem.out_vertices;
-	out_normals = obstacleSystem.out_normals;
-	out_uvs = obstacleSystem.out_uvs;
-	size = obstacleSystem.vertexIndices.size();
+    out_vertices = obstacleSystem.out_vertices;
+    out_normals = obstacleSystem.out_normals;
+    out_uvs = obstacleSystem.out_uvs;
+    size = obstacleSystem.vertexIndices.size();
   }
 
   // Draw triangles based on the vertices we read from our obj file
@@ -162,17 +170,17 @@ void displayObj(std::string name) {
   glPushMatrix();
   glBegin(GL_TRIANGLES);
   for (int i = 0; i < size; i++) {
-	//texture:
-	Point2D t = out_uvs[i];
-	glTexCoord2f(t.mX, t.mY);
+    //texture:
+    Point2D t = out_uvs[i];
+    glTexCoord2f(t.mX, t.mY);
 
-	//normal:
-	Vec3D v = out_normals[i];
-	glNormal3f(v.mX, v.mY, v.mZ);
+    //normal:
+    Vec3D v = out_normals[i];
+    glNormal3f(v.mX, v.mY, v.mZ);
 
-	//vertex:
-	Point3D m = out_vertices[i];
-	glVertex3f(m.mX, m.mY, m.mZ);
+    //vertex:
+    Point3D m = out_vertices[i];
+    glVertex3f(m.mX, m.mY, m.mZ);
   }
   glEnd();
 
@@ -218,11 +226,11 @@ void drawCoins(CoinSystem coinSystem) {
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, coinSpecular);
   glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, coinShine);
   for (std::size_t i = 0; i < coinSystem.v.size(); i++) {
-	glPushMatrix();
-	glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
-	glRotatef(coinSystem.rotation, 1, 0, 0);
-	displayObj("coin");
-	glPopMatrix();
+    glPushMatrix();
+    glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
+    glRotatef(coinSystem.rotation, 1, 0, 0);
+    displayObj("coin");
+    glPopMatrix();
   }
   // Reset texture binding after obstacle.cppfinishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -310,178 +318,274 @@ void drawPreviousMaxScoreIndicatorLine() {
   }
 }
 
+// Ray intersection
+void populateRayTracingValues(int x, int y) {
+  double matModelView[16], matProjection[16];
+  int viewport[4];
+
+  // get matrix and viewport:
+  glGetDoublev(GL_MODELVIEW_MATRIX, matModelView);
+  glGetDoublev(GL_PROJECTION_MATRIX, matProjection);
+  glGetIntegerv(GL_VIEWPORT, viewport);
+
+  // window pos of mouse, Y is inverted on Windows
+  double winX = (double)x;
+  double winY = viewport[3] - (double)y;
+
+  // get point on the 'near' plane (third param is set to 0.0)
+  gluUnProject(winX, winY, 0.0, matModelView, matProjection,
+			   viewport, &m_start[0], &m_start[1], &m_start[2]);
+
+  // get point on the 'far' plane (third param is set to 1.0)
+  gluUnProject(winX, winY, 1.0, matModelView, matProjection,
+			   viewport, &m_end[0], &m_end[1], &m_end[2]);
+}
+
+float getRayIntersectionTimeSphere(int x, int y, int z, float boundingBoxSize) {
+  // reference: Code Lecture on Ray Casting
+  double *R0 = new double[3];
+  double *Rd = new double[3];
+  double xDiff = m_end[0] - m_start[0];
+  double yDiff = m_end[1] - m_start[1];
+  double zDiff = m_end[2] - m_start[2];
+
+  double mag = sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
+
+  R0 = m_start;
+  Rd[0] = xDiff / mag;
+  Rd[1] = yDiff / mag;
+  Rd[2] = zDiff / mag;
+
+  double A = Rd[0] * Rd[0] + Rd[1] * Rd[1] + Rd[2] * Rd[2];
+  double *R0Pc = new double[3];
+  R0Pc[0] = R0[0] - x;
+  R0Pc[1] = R0[1] - y;
+  R0Pc[2] = R0[2] - z;
+
+  double B = 2 * (R0Pc[0] * Rd[0] + R0Pc[1] * Rd[1] + R0Pc[2] * Rd[2]);
+  double C = (R0Pc[0] * R0Pc[0] + R0Pc[1] * R0Pc[1] + R0Pc[2] * R0Pc[2])
+	  - (boundingBoxSize * boundingBoxSize);
+
+  double discriminant = B * B - 4 * A * C;
+
+  if (discriminant < 0)
+	  return -1;
+  else {
+    double t0 = (-B + sqrt(discriminant)) / (2 * A);
+    double t1 = (-B - sqrt(discriminant)) / (2 * A);
+    // return the time for the ray to reach the closest intersection point for comparsion
+    return std::min(t0, t1);
+  }
+}
+
+void mouse(int btn, int state, int x, int y) {
+  /***** Raypicking *****/
+  if (btn == GLUT_LEFT_BUTTON || btn == GLUT_RIGHT_BUTTON) {
+    if (state == GLUT_DOWN) {
+      // populate ray tracing variables each time mouse is clicked
+      populateRayTracingValues(x, y);
+
+      // find the nearest object that intersects with the mouse ray
+      float closestIntersectionTime = std::numeric_limits<float>::max();
+      int closestObstacleIndex = -1;
+      for (unsigned int i = 0; i < obstacleSystem.v.size(); i++) {
+        Obstacle obstacle = obstacleSystem.v.at(i);
+        Point3D pos = obstacle.position;
+        float intersectionTime =
+            getRayIntersectionTimeSphere(pos.mX, pos.mY, pos.mZ, 1);
+        std::cout << "intersect time" << intersectionTime << std::endl;
+          // getRayIntersectionTimeSphere(x, y, getObstacleRadius());
+        if (intersectionTime >= 0 && intersectionTime < closestIntersectionTime) {
+          closestIntersectionTime = intersectionTime;
+          closestObstacleIndex = i;
+        }
+      }
+      // select the nearest object on mouse left click
+      if (btn == GLUT_LEFT_BUTTON) {
+        if (closestObstacleIndex != -1) {
+          // Delete from v
+          obstacleSystem.v.erase(obstacleSystem.v.begin() + closestObstacleIndex);
+        }
+      }
+    }
+  }
+
+  glutPostRedisplay();
+}
+
+
 void display(void) {
   if (screen == game) { //If state of screen is on game, draw the game
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
-	//defining light properties
-	glLightfv(GL_LIGHT0, GL_POSITION, position);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
+    //defining light properties
+    glLightfv(GL_LIGHT0, GL_POSITION, position);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 
-	//For testing
-	if (cameraToggle) {
-	  gluLookAt(7,
-				rocket.position.mY + rocket.forwardDistance,
-				rocket.position.mZ,
-				rocket.position.mX,
-				rocket.position.mY + rocket.forwardDistance,
-				rocket.position.mZ,
-				0,
-				1,
-				0);
-	  //gluLookAt(4, 4,4, 0,0,0, 0, 1, 0);
-	} else {
-	  gluLookAt(0, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
-	}
+    //For testing
+    if (cameraToggle) {
+      gluLookAt(7,
+          rocket.position.mY + rocket.forwardDistance,
+          rocket.position.mZ,
+          rocket.position.mX,
+          rocket.position.mY + rocket.forwardDistance,
+          rocket.position.mZ,
+          0,
+          1,
+          0);
+      //gluLookAt(4, 4,4, 0,0,0, 0, 1, 0);
+    } else {
+      gluLookAt(0, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
+    }
 
   
-	// make y arbitrarily high to simulate an infinite long road ahead
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-
-	//Visualization of where the lightsource is
-	glPushMatrix();
-	glTranslatef(position[0], position[1] + rocket.forwardDistance, 0);
-	glutSolidSphere(0.1, 10, 10);
-	glPopMatrix();
-
-	drawRocket(rocket);
-	drawObstacles(obstacleSystem);
-	drawCoins(coinSystem);
-  
-  glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube
-  glEnable(GL_TEXTURE_GEN_T);
-	drawParticles(rocketFlame.v);
-  drawParticles(explosion);
-  glDisable(GL_TEXTURE_GEN_S);
-  glDisable(GL_TEXTURE_GEN_T);
-  
-	drawPreviousMaxScoreIndicatorLine();
-
-
-	//set materials back to default
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-
-	/**
-	* Displays Text
-	* Source: https://stackoverflow.com/questions/18847109/displaying-fixed-location-2d-text-in-a-3d-opengl-world-using-glut
-	* Explanation: http://www.lighthouse3d.com/tutorials/glut-tutorial/bitmap-fonts-and-orthogonal-projections/
-	*
-	*/
-	//Display Text
-	glColor3f(1, 1, 1); //Text is white
-	glMatrixMode(GL_PROJECTION); //Setting matrix to projection so we can specify position of text in pixels
-
-	glPushMatrix(); //Pushing matrix on top of stack (saving previous display)
-	glLoadIdentity();
-	gluOrtho2D(0.0, 600, 0.0, 600);
-	glMatrixMode(GL_MODELVIEW);
-
-	//Display Fuel
-	glPushMatrix();
-	glLoadIdentity();
-  //set colour to white
-	glColor3f(1, 1, 1);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[2]);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[2]);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[2]);
-  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-
-	glRasterPos2i(10, 10);
-	std::string fuelDisplay = "Fuel: " + std::to_string(rocket.fuel);
-	drawText(fuelDisplay);
-
-  	//Display amount of coins
-	glColor3f(1, 1, 1);
-	glRasterPos2i(10, 580);
-	std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
-	drawText(coinDisplay);
-
-	//If an obstacle has been hit, display affect to fuel amount
-	if (obstacleHit) {
-	  glColor3f(1, 0, 0);
-    //set colour to red
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[0]);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[0]);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[0]);
+    // make y arbitrarily high to simulate an infinite long road ahead
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-	  glRasterPos2i(150, 10);
-	  drawText("-20");
+
+    //Visualization of where the lightsource is
+    glPushMatrix();
+    glTranslatef(position[0], position[1] + rocket.forwardDistance, 0);
+    glutSolidSphere(0.1, 10, 10);
+    glPopMatrix();
+
+    drawRocket(rocket);
+    drawObstacles(obstacleSystem);
+    drawCoins(coinSystem);
     
-	}
-	//If a coin has been collected, display affect to coin amount
-	if (coinGet) {
-	  glColor3f(0, 1, 0);
-    //set colour to green
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[1]);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[1]);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[1]);
+    glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube
+    glEnable(GL_TEXTURE_GEN_T);
+    drawParticles(rocketFlame.v);
+    drawParticles(explosion);
+    glDisable(GL_TEXTURE_GEN_S);
+    glDisable(GL_TEXTURE_GEN_T);
+    
+    drawPreviousMaxScoreIndicatorLine();
+
+
+    //set materials back to default
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-	  glRasterPos2i(110, 580);
-	  drawText("+100");
-	}
-	// If the previous record has been broken, display the text to the user on the game screen
-	if (breakRecord) {
-	  glColor3f(1, 0, 0);
-	  glRasterPos2i(90, 560);
-	  drawText("Congrats! You are setting a new game record!");
-	}
 
-	//Undoing changes to display
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+    /**
+    * Displays Text
+    * Source: https://stackoverflow.com/questions/18847109/displaying-fixed-location-2d-text-in-a-3d-opengl-world-using-glut
+    * Explanation: http://www.lighthouse3d.com/tutorials/glut-tutorial/bitmap-fonts-and-orthogonal-projections/
+    *
+    */
+    //Display Text
+    glColor3f(1, 1, 1); //Text is white
+    glMatrixMode(GL_PROJECTION); //Setting matrix to projection so we can specify position of text in pixels
 
-	glutSwapBuffers();
+    glPushMatrix(); //Pushing matrix on top of stack (saving previous display)
+    glLoadIdentity();
+    gluOrtho2D(0.0, 600, 0.0, 600);
+    glMatrixMode(GL_MODELVIEW);
+
+    //Display Fuel
+    glPushMatrix();
+    glLoadIdentity();
+    //set colour to white
+    glColor3f(1, 1, 1);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[2]);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[2]);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[2]);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+
+    glRasterPos2i(10, 10);
+    std::string fuelDisplay = "Fuel: " + std::to_string(rocket.fuel);
+    drawText(fuelDisplay);
+
+      //Display amount of coins
+    glColor3f(1, 1, 1);
+    glRasterPos2i(10, 580);
+    std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
+    drawText(coinDisplay);
+
+    //If an obstacle has been hit, display affect to fuel amount
+    if (obstacleHit) {
+      glColor3f(1, 0, 0);
+      //set colour to red
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[0]);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[0]);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[0]);
+      glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+      glRasterPos2i(150, 10);
+      drawText("-20");
+      
+    }
+    //If a coin has been collected, display affect to coin amount
+    if (coinGet) {
+      glColor3f(0, 1, 0);
+      //set colour to green
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[1]);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[1]);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[1]);
+      glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+      glRasterPos2i(110, 580);
+      drawText("+100");
+    }
+    // If the previous record has been broken, display the text to the user on the game screen
+    if (breakRecord) {
+      glColor3f(1, 0, 0);
+      glRasterPos2i(90, 560);
+      drawText("Congrats! You are setting a new game record!");
+    }
+
+    //Undoing changes to display
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+
+    glutSwapBuffers();
   } else if (screen == menu) { //if state of screen is on menu, draw the menu
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	gluOrtho2D(0.0, 600, 0.0, 600);
-	glMatrixMode(GL_MODELVIEW);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0.0, 600, 0.0, 600);
+    glMatrixMode(GL_MODELVIEW);
 
-	glPushMatrix();
-	glLoadIdentity();
+    glPushMatrix();
+    glLoadIdentity();
 
-	glColor3f(1, 1, 1);
-	glRasterPos2i(10, 580);
-	std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
-	drawText(coinDisplay);
+    glColor3f(1, 1, 1);
+    glRasterPos2i(10, 580);
+    std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
+    drawText(coinDisplay);
 
-	std::string scoreDisplay = "    Max Score: " + std::to_string(maxForwardingDistance);
-	prevMaxForwardingDistance = maxForwardingDistance;
-	drawText(scoreDisplay);
+    std::string scoreDisplay = "    Max Score: " + std::to_string(maxForwardingDistance);
+    prevMaxForwardingDistance = maxForwardingDistance;
+    drawText(scoreDisplay);
 
-	glRasterPos2i(200, 10);
-	drawText("Press Space Bar to play");
+    glRasterPos2i(200, 10);
+    drawText("Press Space Bar to play");
 
-	glRasterPos2i(10, 500);
-	drawText("(1) 100 Coins: Increase Fuel by 100");
+    glRasterPos2i(10, 500);
+    drawText("(1) 100 Coins: Increase Fuel by 100");
 
-	glRasterPos2i(10, 450);
-	drawText("(2) 100 Coins: Increase Forward Speed");
+    glRasterPos2i(10, 450);
+    drawText("(2) 100 Coins: Increase Forward Speed");
 
-	glRasterPos2i(10, 400);
-	drawText("(3) 100 Coins: Increase Turning Speed");
+    glRasterPos2i(10, 400);
+    drawText("(3) 100 Coins: Increase Turning Speed");
 
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 
-	glutSwapBuffers();
+    glutSwapBuffers();
   }
 }
 
@@ -522,6 +626,9 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	  case 'v':cameraToggle = !cameraToggle;
 		break;
+    case 'p':
+      paused = !paused;
+      break;
 	}
   } else if (screen == menu) {
 	switch (key) {
@@ -580,45 +687,46 @@ void keyboard(unsigned char key, int x, int y) {
 }
 
 void FPS(int val) {
-  if (screen == game) {
-	rocket.update();
-	maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
-	// detect if the player reaches beyond previous max record
-	// this only occurs when there is an existing record
-	if ((rocket.forwardDistance > prevMaxForwardingDistance) && !breakRecord && (prevMaxForwardingDistance > 0)) {
-	  breakRecord = true;
-	}
-	coinSystem.update(rocket);
-	obstacleSystem.update(rocket, explosion, rocketFlame.v);
-	rocketFlame.update(rocket);
+  if (!paused) {
+    if (screen == game) {
+    rocket.update();
+    maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
+    // detect if the player reaches beyond previous max record
+    // this only occurs when there is an existing record
+    if ((rocket.forwardDistance > prevMaxForwardingDistance) && !breakRecord && (prevMaxForwardingDistance > 0)) {
+      breakRecord = true;
+    }
+    coinSystem.update(rocket);
+    obstacleSystem.update(rocket, explosion, rocketFlame.v);
+    rocketFlame.update(rocket);
 
-	if (rocket.fuel <= 0) {
-	  screen = menu;
-	  glClearColor(0, 0, 0, 1); //change background to black
-	  glDisable(GL_LIGHTING); //disable lights
-	  glDisable(GL_LIGHT0);
-	}
-	//If obstacle has been hit, decrement the amount of time the text stays on the screen
-	if (obstacleHit) {
-	  obsHitAge -= 0.1;
-	}
-	//If text age is < 0 reset obstacle detection
-	if (obsHitAge < 0) {
-	  obstacleHit = false;
-	}
-	//If coin has been hit, decrement the amount of time the text stays on the screen
-	if (coinGet) {
-	  coinGetAge -= 0.1;
-	}
-	//If text age is < 0 reset coin detection
-	if (coinGetAge < 0) {
-	  coinGet = false;
-	}
+    if (rocket.fuel <= 0) {
+      screen = menu;
+      glClearColor(0, 0, 0, 1); //change background to black
+      glDisable(GL_LIGHTING); //disable lights
+      glDisable(GL_LIGHT0);
+    }
+    //If obstacle has been hit, decrement the amount of time the text stays on the screen
+    if (obstacleHit) {
+      obsHitAge -= 0.1;
+    }
+    //If text age is < 0 reset obstacle detection
+    if (obsHitAge < 0) {
+      obstacleHit = false;
+    }
+    //If coin has been hit, decrement the amount of time the text stays on the screen
+    if (coinGet) {
+      coinGetAge -= 0.1;
+    }
+    //If text age is < 0 reset coin detection
+    if (coinGetAge < 0) {
+      coinGet = false;
+    }
 
-  } else if (screen == menu) {
+    } else if (screen == menu) {
 
+    }
   }
-
   glutPostRedisplay();
   glutTimerFunc(17, FPS, 0);
 }
@@ -720,7 +828,6 @@ void init(void) {
 
   glMatrixMode(GL_TEXTURE);
   glScalef(1, -1, -1);
-
 }
 
 /* main function - program entry point */
@@ -735,6 +842,7 @@ int main(int argc, char **argv) {
 
   glutDisplayFunc(display);    //registers "display" as the display callback function
   glutKeyboardFunc(keyboard);
+  glutMouseFunc(mouse);
   glutTimerFunc(17, FPS, 0);
   glutReshapeFunc(reshape);
 
