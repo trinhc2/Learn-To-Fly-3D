@@ -14,6 +14,7 @@ class Obstacle {
   int type; //denote obstacle types. 0: regular fuel-decreasing obstacles & 1: knock-back bomb obstacles
   Obstacle();
   Obstacle(Point3D position, int size, int type);
+  int getSize();
 };
 
 class ObstacleSystem {

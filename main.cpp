@@ -392,7 +392,7 @@ void mouse(int btn, int state, int x, int y) {
         Obstacle obstacle = obstacleSystem.v.at(i);
         Point3D pos = obstacle.position;
         float intersectionTime =
-            getRayIntersectionTimeSphere(pos.mX, pos.mY, pos.mZ, 1);
+            getRayIntersectionTimeSphere(pos.mX, pos.mY, pos.mZ, obstacle.getSize()); //TODO figure out best way for getting obstacle size/"bounding sphere radius"
         std::cout << "intersect time" << intersectionTime << std::endl;
           // getRayIntersectionTimeSphere(x, y, getObstacleRadius());
         if (intersectionTime >= 0 && intersectionTime < closestIntersectionTime) {
@@ -400,7 +400,6 @@ void mouse(int btn, int state, int x, int y) {
           closestObstacleIndex = i;
         }
       }
-      // select the nearest object on mouse left click
       if (btn == GLUT_LEFT_BUTTON) {
         if (closestObstacleIndex != -1) {
           // Delete from v

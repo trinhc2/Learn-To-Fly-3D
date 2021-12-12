@@ -17,6 +17,10 @@ Obstacle::Obstacle(Point3D position, int size, int type) {
   this->type = type;
 }
 
+int Obstacle::getSize() {
+  return this->size;
+}
+
 ObstacleSystem::ObstacleSystem() {
 }
 
