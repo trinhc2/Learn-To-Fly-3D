@@ -52,7 +52,7 @@ Rocket: https://www.turbosquid.com/3d-models/free-obj-model-rocket/665662
 
 Bird: https://www.turbosquid.com/3d-models/eagle-rigged-fbx-free/1045001#
 
-
+Cloud: https://www.cgtrader.com/items/644366
 
 ## Text Display
 - https://stackoverflow.com/questions/18847109/displaying-fixed-location-2d-text-in-a-3d-opengl-world-using-glut

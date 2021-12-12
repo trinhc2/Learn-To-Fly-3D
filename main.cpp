@@ -66,6 +66,7 @@ Rocket rocket = Rocket();
 CoinSystem coinSystem = CoinSystem();
 ObstacleSystem obstacleSystem = ObstacleSystem();
 ParticleSystem rocketFlame = ParticleSystem();
+SceneObjectSystem sceneSystem = SceneObjectSystem();
 std::vector<Particle> explosion; //bomb explosion particles
 
 float position[4] = {1, 2 + rocket.forwardDistance, 0, 1};
@@ -195,6 +196,18 @@ void drawRocket(Rocket rocket) {
   glPopMatrix();
   // Reset texture binding after finishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void drawScenery(SceneObjectSystem sceneSystem) {
+  glColor3f(1, 1, 0);
+  for (std::size_t i = 0; i < sceneSystem.v.size(); i++) {
+    glPushMatrix();
+    glTranslatef(sceneSystem.v.at(i).position.mX, sceneSystem.v.at(i).position.mY, sceneSystem.v.at(i).position.mZ);
+    // glRotatef(sceneSystem.rotation, 1, 0, 0);
+    displayObj(sceneSystem.v.at(i).out_vertices, sceneSystem.v.at(i).out_normals, 
+              sceneSystem.v.at(i).out_uvs, sceneSystem.v.at(i).vertexIndices.size());
+    glPopMatrix();
+  }
 }
 
 /**
@@ -438,6 +451,7 @@ void display(void) {
     drawRocket(rocket);
     drawObstacles(obstacleSystem);
     drawCoins(coinSystem);
+    drawScenery(sceneSystem);
     
     glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube
     glEnable(GL_TEXTURE_GEN_T);
@@ -635,6 +649,7 @@ void keyboard(unsigned char key, int x, int y) {
 		//reset object lists
 		coinSystem.v.clear();
 		obstacleSystem.v.clear();
+    sceneSystem.v.clear();
 
 		//reset breakRecord flag
 		breakRecord = false;
@@ -679,6 +694,7 @@ void FPS(int val) {
     coinSystem.update(rocket);
     obstacleSystem.update(rocket, explosion, rocketFlame.v);
     rocketFlame.update(rocket);
+    sceneSystem.update(rocket);
 
     if (rocket.fuel <= 0) {
       screen = menu;
