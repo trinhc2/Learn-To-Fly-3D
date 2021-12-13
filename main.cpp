@@ -36,6 +36,9 @@ bool infinite = false; //if inifinite is true then the game goes on forever
 
 float moonLocation = 20;
 
+unsigned int viewportWidth  = 600;
+unsigned int viewportHeight = 600;
+
 Screen screen = menu; //screen state
 
 float coinAmbient[4] = {0.24725f, 0.1995f, 0.0745f, 1.0f};
@@ -74,11 +77,147 @@ float maxForwardingDistance = 0; // Used to keep track of player score
 float prevMaxForwardingDistance = 0; // used to keep track max player score from previous plays
 
 // Textures
-GLubyte *img_data[3];
+GLubyte *img_data[4];
 GLuint texture_map[4];
-int width[3];
-int height[3];
-int max[3];
+int width[4];
+int height[4];
+int max[4];
+
+/* LoadPPM -- loads the specified ppm file, and returns the image data as a GLubyte
+ *  (unsigned byte) array. Also returns the width and height of the image, and the
+ *  maximum colour value by way of arguments
+ *  usage: GLubyte myImg = LoadPPM("myImg.ppm", &width, &height, &max);
+ */
+GLubyte *LoadPPM(char *file, int *width, int *height, int *max) {
+  GLubyte *img;
+  FILE *fd;
+  int n, m;
+  int k, nm;
+  char c;
+  int i;
+  char b[100];
+  float s;
+  int red, green, blue;
+
+  fd = fopen(file, "r");
+  fscanf(fd, "%[^\n] ", b);
+  if (b[0] != 'P' || b[1] != '3') {
+	printf("%s is not a PPM file!\n", file);
+	exit(0);
+  }
+  printf("%s is a PPM file\n", file);
+  fscanf(fd, "%c", &c);
+  while (c == '#') {
+	fscanf(fd, "%[^\n] ", b);
+	printf("%s\n", b);
+	fscanf(fd, "%c", &c);
+  }
+  ungetc(c, fd);
+  fscanf(fd, "%d %d %d", &n, &m, &k);
+
+  printf("%d rows  %d columns  max value= %d\n", n, m, k);
+
+  nm = n * m;
+
+  img = (GLubyte *)(malloc(3 * sizeof(GLuint) * nm));
+
+  s = 255.0 / k;
+
+  for (i = 0; i < nm; i++) {
+	fscanf(fd, "%d %d %d", &red, &green, &blue);
+	img[3 * nm - 3 * i - 3] = red * s;
+	img[3 * nm - 3 * i - 2] = green * s;
+	img[3 * nm - 3 * i - 1] = blue * s;
+  }
+
+  *width = n;
+  *height = m;
+  *max = k;
+
+  return img;
+}
+
+void loadTexture(char *filename, int index) {
+  glBindTexture(GL_TEXTURE_2D, texture_map[index]);
+  img_data[index] = LoadPPM(filename, &width[index], &height[index], &max[index]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[index], height[index], 0, GL_RGB, GL_UNSIGNED_BYTE, img_data[index]);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+}
+
+struct Image {
+    int mWidth;
+    int mHeight;
+	int mMax;
+    GLubyte * mImage;
+
+    void load(char * filename) {
+        mImage = LoadPPM(filename, &mWidth, &mHeight, &mMax);
+    }
+
+    void draw(unsigned int x, unsigned int y) {
+        glRasterPos2i(x + mWidth, y);
+        glPixelZoom(-0.9, 0.9); //flip image and scale down to 0.9
+        glDrawPixels(mWidth, mHeight, GL_RGB, GL_UNSIGNED_BYTE, mImage);
+    }
+};
+
+struct Handler {
+    unsigned int mLeft, mRight, mTop, mBottom;
+    void (*mHandlerFunc)();
+
+    bool isInBounds(unsigned int x, unsigned int y) {
+        return (mLeft <= x && x <= mRight) && (mBottom <= y && y <= mTop);
+    }
+
+    void handleClickAt(unsigned int x, unsigned int y) {
+        if (isInBounds(x, y)) {
+            mHandlerFunc();
+        }
+    }
+
+    void drawBoxVertices() {
+        glVertex3f(mLeft, mTop, 1);
+        glVertex3f(mLeft, mBottom, 1);
+        glVertex3f(mRight, mTop, 1);
+        glVertex3f(mRight, mBottom, 1);
+        glVertex3f(mLeft, mTop, 1);
+        glVertex3f(mRight, mTop, 1);
+        glVertex3f(mLeft, mBottom, 1);
+        glVertex3f(mRight, mBottom, 1);
+    }
+};
+
+struct InteractionHandler {
+    std::vector<Handler *> mHandlers;
+
+    void leftClickDown(int x, int y) {
+        for (Handler *handler : mHandlers) {
+            handler->handleClickAt(x, y);
+        }
+    }
+
+    void drawHandlers() {
+        glColor3f(1, 1, 1);
+        glLineWidth(2);
+        glBegin(GL_LINES);
+        for (Handler *handler : mHandlers) {
+            handler->drawBoxVertices();
+        }
+        glEnd();
+    }
+
+    void addHandler(Handler *handler) {
+        mHandlers.push_back(handler);
+    }
+};
+
+InteractionHandler mouseHandler;
+Image gas;
+Image speed;
+Image turning;
 
 void printWelcomeMessage() {
   std::cout << "Welcome to Learn To Fly 3D!" << std::endl;
@@ -406,7 +545,7 @@ void display(void) {
 
 	glPushMatrix(); //Pushing matrix on top of stack (saving previous display)
 	glLoadIdentity();
-	gluOrtho2D(0.0, 600, 0.0, 600);
+	gluOrtho2D(0.0, viewportWidth, 0.0, viewportHeight);
 	glMatrixMode(GL_MODELVIEW);
 
 	//Display Fuel
@@ -476,11 +615,19 @@ void display(void) {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	gluOrtho2D(0.0, 600, 0.0, 600);
+	gluOrtho2D(0.0, viewportWidth, 0.0, viewportHeight);
 	glMatrixMode(GL_MODELVIEW);
 
 	glPushMatrix();
 	glLoadIdentity();
+	
+	//https://stackoverflow.com/questions/15983607/opengl-texture-tilted
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //images would appear slanted without this
+
+	//Drawing UI
+	gas.draw(0,300);
+	speed.draw(290, 300);
+	turning.draw(0,100);
 
 	glColor3f(1, 1, 1);
 	glRasterPos2i(10, 580);
@@ -494,14 +641,6 @@ void display(void) {
 	glRasterPos2i(200, 10);
 	drawText("Press Space Bar to play");
 
-	glRasterPos2i(10, 500);
-	drawText("(1) 100 Coins: Increase Fuel by 100");
-
-	glRasterPos2i(10, 450);
-	drawText("(2) 100 Coins: Increase Forward Speed");
-
-	glRasterPos2i(10, 400);
-	drawText("(3) 100 Coins: Increase Turning Speed");
 
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -520,7 +659,7 @@ void display(void) {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	gluOrtho2D(0.0, 600, 0.0, 600);
+	gluOrtho2D(0.0, viewportWidth, 0.0, viewportHeight);
 	glMatrixMode(GL_MODELVIEW);
 
 	glPushMatrix();
@@ -612,24 +751,6 @@ void keyboard(unsigned char key, int x, int y) {
 
 		screen = game;
 		break;
-	  case '1':
-		if (rocket.coins >= 100) {
-		  rocket.coins -= 100;
-		  rocket.fuelUpgrades += 100;
-		}
-		break;
-	  case '2':
-		if (rocket.coins >= 100) {
-		  rocket.coins -= 100;
-		  rocket.forwardSpeed += 0.1;
-		}
-		break;
-	  case '3':
-		if (rocket.coins >= 100) {
-		  rocket.coins -= 100;
-		  rocket.turningSpeed += 0.1;
-		}
-		break;
 	}
   }
   else if (screen == win) {
@@ -665,6 +786,66 @@ void keyboard(unsigned char key, int x, int y) {
   }
   glutPostRedisplay();
 }
+
+void mouse(int button, int state, int x, int y) {
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        mouseHandler.leftClickDown(x, viewportWidth - y);
+    }
+}
+
+void gasIncrease() {
+	if (rocket.coins >= 100) {
+		rocket.coins -= 100;
+		rocket.fuelUpgrades += 100;
+	}
+	else {
+		printf("Not enough coins. \n");
+	}
+}
+
+void speedIncrease() {
+	if (rocket.coins >= 100) {
+		rocket.coins -= 100;
+		rocket.forwardSpeed += 0.1;
+	}
+	else {
+		printf("Not enough coins. \n");
+	}
+}
+
+void turningIncrease() {
+	if (rocket.coins >= 100) {
+		rocket.coins -= 100;
+		rocket.turningSpeed += 0.1;
+	}
+	else {
+		printf("Not enough coins. \n");
+	}
+}
+
+Handler gasButton = {
+    30,
+    305,
+    510,
+    308,
+    gasIncrease
+};
+
+Handler speedButton = {
+    320,
+    595,
+    510,
+    308,
+    speedIncrease
+};
+
+Handler turningButton = {
+    30,
+    305,
+    310,
+    108,
+    turningIncrease
+};
 
 void FPS(int val) {
   if (screen == game) {
@@ -717,70 +898,6 @@ void FPS(int val) {
   glutTimerFunc(17, FPS, 0);
 }
 
-/* LoadPPM -- loads the specified ppm file, and returns the image data as a GLubyte
- *  (unsigned byte) array. Also returns the width and height of the image, and the
- *  maximum colour value by way of arguments
- *  usage: GLubyte myImg = LoadPPM("myImg.ppm", &width, &height, &max);
- */
-GLubyte *LoadPPM(char *file, int *width, int *height, int *max) {
-  GLubyte *img;
-  FILE *fd;
-  int n, m;
-  int k, nm;
-  char c;
-  int i;
-  char b[100];
-  float s;
-  int red, green, blue;
-
-  fd = fopen(file, "r");
-  fscanf(fd, "%[^\n] ", b);
-  if (b[0] != 'P' || b[1] != '3') {
-	printf("%s is not a PPM file!\n", file);
-	exit(0);
-  }
-  printf("%s is a PPM file\n", file);
-  fscanf(fd, "%c", &c);
-  while (c == '#') {
-	fscanf(fd, "%[^\n] ", b);
-	printf("%s\n", b);
-	fscanf(fd, "%c", &c);
-  }
-  ungetc(c, fd);
-  fscanf(fd, "%d %d %d", &n, &m, &k);
-
-  printf("%d rows  %d columns  max value= %d\n", n, m, k);
-
-  nm = n * m;
-
-  img = (GLubyte *)(malloc(3 * sizeof(GLuint) * nm));
-
-  s = 255.0 / k;
-
-  for (i = 0; i < nm; i++) {
-	fscanf(fd, "%d %d %d", &red, &green, &blue);
-	img[3 * nm - 3 * i - 3] = red * s;
-	img[3 * nm - 3 * i - 2] = green * s;
-	img[3 * nm - 3 * i - 1] = blue * s;
-  }
-
-  *width = n;
-  *height = m;
-  *max = k;
-
-  return img;
-}
-
-void loadTexture(char *filename, int index) {
-  glBindTexture(GL_TEXTURE_2D, texture_map[index]);
-  img_data[index] = LoadPPM(filename, &width[index], &height[index], &max[index]);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[index], height[index], 0, GL_RGB, GL_UNSIGNED_BYTE, img_data[index]);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-}
-
 void reshape(int w, int h)
 {
 	glMatrixMode(GL_PROJECTION);
@@ -790,6 +907,8 @@ void reshape(int w, int h)
 
 	glMatrixMode(GL_MODELVIEW);
 	glViewport(0, 0, w, h);
+	viewportWidth = w;
+    viewportHeight = h;
 }
 
 void init(void) {
@@ -813,6 +932,14 @@ void init(void) {
   loadTexture("./assets/moon/moon.ppm", 3);
 //  loadTexture("bomb.ppm", 3);
 
+	gas.load("./assets/gas.ppm");
+	speed.load("./assets/speed.ppm");
+	turning.load("./assets/turning.ppm");
+
+	mouseHandler.addHandler(&gasButton);
+	mouseHandler.addHandler(&speedButton);
+	mouseHandler.addHandler(&turningButton);
+
   glMatrixMode(GL_TEXTURE);
   glScalef(1, -1, -1);
 
@@ -830,6 +957,7 @@ int main(int argc, char **argv) {
 
   glutDisplayFunc(display);    //registers "display" as the display callback function
   glutKeyboardFunc(keyboard);
+  glutMouseFunc(mouse);
   glutTimerFunc(17, FPS, 0);
   glutReshapeFunc(reshape);
 

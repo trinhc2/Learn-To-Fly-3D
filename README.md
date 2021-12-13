@@ -5,16 +5,17 @@ A recreation of the flash game "Learn to Fly" using OpenGL.
 ## Obstacles and Coins
 - Collision detection with Rocket
 - Upon collision updates state of game. Obstacles reduce fuel total and Coins increment currency used for shop
+- Bombs explode upon impacting, sending the rocket backwards
 - Randomly generated as the game goes on and on each run
 - Disappear when rocket has flown past to create room for other obstacles
 
 ## Menu/Shop
-- Player is able to purchase upgrades for their rocket at the menu/shop after each run using the arrow keys
+- Player is able to purchase upgrades for their rocket at the menu/shop after each run by clicking on the interface
 - Players return to shop whenever their run is ended (fuel = 0)
 - Furthest distance reached is displayed
 
 ## Rocket
-- Rocket is able to turn using "A/D" keys
+- Rocket is able to move using "WASD" keys
 - Rotates upon turning to simulate real turning behaviour
 - Implemented particle system to simulate firing of rocket
 
