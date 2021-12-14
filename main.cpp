@@ -607,6 +607,7 @@ void display(void) {
 	glutSwapBuffers();
   } else if (screen == menu) { //if state of screen is on menu, draw the menu
   	glClearColor(0, 0, 0, 1); //change background to black
+	glBindTexture(GL_TEXTURE_2D, 0); // reset texture here so that shop page won't be affected by our other textures
 	glDisable(GL_LIGHTING); //disable lights
 	glDisable(GL_LIGHT0);
 
