@@ -51,10 +51,10 @@ float textAmb[3][4] = { {1, 0, 0, 1},  {0, 1, 0, 1}, {1, 1, 1, 1}};
 float textDiff[3][4] = { {1, 0, 0, 1},  {0, 1, 0, 1}, {1, 1, 1, 1}};
 float textSpec[3][4] = { {1, 0, 0, 1}, {0, 1, 0, 1}, {1, 1, 1, 1}};
 
-float obstacleAmbient[4] = {0.05375f, 0.05f, 0.06625f, 0.82f};
-float obstacleDiffuse[4] = {0.18275f, 0.17f, 0.22525f, 0.82f};
-float obstacleSpecular[4] = {0.332741f, 0.328634f, 0.346435f, 0.82f};
-float obstacleShine = 38.4f;
+float obstacleAmbient[4] = {0.19225f, 0.19225f, 0.19225f, 0.19225f};
+float obstacleDiffuse[4] = {0.50754f, 0.50754f, 0.50754f, 0.50754f};
+float obstacleSpecular[4] = {0.508273f, 0.508273f, 0.508273f, 0.82f};
+float obstacleShine = 0.4f;
 
 float ambientDefault[4] = {0.2, 0.2, 0.2, 1.0};
 float diffuseDefault[4] = {0.8, 0.8, 0.8, 1.0};
@@ -77,11 +77,11 @@ float maxForwardingDistance = 0; // Used to keep track of player score
 float prevMaxForwardingDistance = 0; // used to keep track max player score from previous plays
 
 // Textures
-GLubyte *img_data[4];
-GLuint texture_map[4];
-int width[4];
-int height[4];
-int max[4];
+GLubyte *img_data[5];
+GLuint texture_map[5];
+int width[5];
+int height[5];
+int max[5];
 
 /* LoadPPM -- loads the specified ppm file, and returns the image data as a GLubyte
  *  (unsigned byte) array. Also returns the width and height of the image, and the
@@ -375,7 +375,6 @@ void drawCoins(CoinSystem coinSystem) {
  * Draws the obstacles to the screen
  */
 void drawObstacles(ObstacleSystem obstacleSystem) {
-  glBindTexture(GL_TEXTURE_2D, texture_map[1]);
   glColor3f(0, 1, 0);
 
   for (std::size_t i = 0; i < obstacleSystem.v.size(); i++) {
@@ -389,15 +388,16 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
       glTranslatef(obstacle.position.mX,
             obstacle.position.mY,
             obstacle.position.mZ);
-      //TODO: temp: larger obstacle == bomb obstacle. Need to apply a different texture for it later on
       if (obstacle.type == 1) {
-        glScalef(2, 1, 1);
-      }
+		glBindTexture(GL_TEXTURE_2D, texture_map[4]);
+      }else {
+		glBindTexture(GL_TEXTURE_2D, texture_map[1]);
+	  }
       displayObj("obstacle");
+	// Reset texture binding after finishing draw
+	glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
   }
-  // Reset texture binding after finishing draw
-  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 /**
@@ -488,7 +488,7 @@ void display(void) {
 	  gluLookAt(0, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
 	}
 
-  
+
 	// make y arbitrarily high to simulate an infinite long road ahead
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
@@ -504,7 +504,7 @@ void display(void) {
 	drawRocket(rocket);
 	drawObstacles(obstacleSystem);
 	drawCoins(coinSystem);
-  
+
 	glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube
 	glEnable(GL_TEXTURE_GEN_T);
 	drawParticles(rocketFlame.v);
@@ -523,7 +523,7 @@ void display(void) {
 
 	glDisable(GL_TEXTURE_GEN_S);
 	glDisable(GL_TEXTURE_GEN_T);
-  
+
 	drawPreviousMaxScoreIndicatorLine();
 
 
@@ -620,7 +620,7 @@ void display(void) {
 
 	glPushMatrix();
 	glLoadIdentity();
-	
+
 	//https://stackoverflow.com/questions/15983607/opengl-texture-tilted
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //images would appear slanted without this
 
@@ -693,13 +693,13 @@ void keyboard(unsigned char key, int x, int y) {
 		/*esc*/
 	  case 27:exit(0);
 		break;
-    
+
     case 'w': //raises rocket
       if (rocket.position.mX < 1.3) {
         rocket.xOffset += rocket.turningSpeed;
       }
       break;
-      
+
     case 's': //lowers rocket
       if (rocket.position.mX > -1.3) {
         rocket.xOffset -= rocket.turningSpeed;
@@ -862,7 +862,7 @@ void FPS(int val) {
 
 	if (rocket.fuel <= 0) {
 	  screen = menu;
-	
+
 	}
 	//If obstacle has been hit, decrement the amount of time the text stays on the screen
 	if (obstacleHit) {
@@ -923,14 +923,14 @@ void init(void) {
   obstacleSystem.loadObstacleObj("./assets/obstacle/obstacle.obj");
 
   glEnable(GL_TEXTURE_2D);
-  glGenTextures(4, texture_map);
+  glGenTextures(5, texture_map);
 
   // Temporarily using some ppms from lecture, will replace with proper textures later
   loadTexture("./assets/particle/fire.ppm", 0);
-  loadTexture("snail_a.ppm", 1);
+  loadTexture("./assets/obstacle/obstacle.ppm", 1);
   loadTexture("./assets/rocket/steel.ppm", 2);
   loadTexture("./assets/moon/moon.ppm", 3);
-//  loadTexture("bomb.ppm", 3);
+  loadTexture("./assets/obstacle/bomb.ppm", 4);
 
 	gas.load("./assets/gas.ppm");
 	speed.load("./assets/speed.ppm");
@@ -950,7 +950,7 @@ int main(int argc, char **argv) {
   glutInit(&argc, argv);        //starts up GLUT
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutInitWindowSize(600, 600);
-  
+
   setbuf(stdout, NULL); //remove stdout buffer
 
   glutCreateWindow("Learn to Fly");    //creates the window
