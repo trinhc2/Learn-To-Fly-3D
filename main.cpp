@@ -39,6 +39,7 @@ float coinGetAge = 0;
 bool breakRecord = false;
 bool infinite = false; //if inifinite is true then the game goes on forever
 bool paused = false;
+int recordDisappearTime = 500; // Keeps on screen for 5 secs (300 frames)
 
 // global variables for ray casting & ray picking
 double *m_start = new double[3];
@@ -417,13 +418,13 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
             obstacle.position.mY,
             obstacle.position.mZ);
       if (obstacle.type == 1) {
-		glBindTexture(GL_TEXTURE_2D, texture_map[4]);
-      }else {
-		glBindTexture(GL_TEXTURE_2D, texture_map[1]);
-	  }
+        glBindTexture(GL_TEXTURE_2D, texture_map[4]);
+      } else {
+		    glBindTexture(GL_TEXTURE_2D, texture_map[1]);
+	    }
       displayObj(obstacleSystem.out_vertices, obstacleSystem.out_normals, obstacleSystem.out_uvs, obstacleSystem.vertexIndices.size());
-	// Reset texture binding after finishing draw
-	glBindTexture(GL_TEXTURE_2D, 0);
+      // Reset texture binding after finishing draw
+      glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
   }
 }
@@ -485,9 +486,8 @@ void display(void) {
   if (screen == game) { //If state of screen is on game, draw the game
 
 	//calculate background colour based on forward distance * base value
-	//base value is determined by 1/250 meaning that at 250 forward distance the background is black (space).
-  // note: changing this to 1/500 to make the clouds section a little longer
-  	glClearColor(0.4 - (rocket.forwardDistance * 0.002), 0.79 - (rocket.forwardDistance * 0.002), 1 - (rocket.forwardDistance * 0.002), 1);
+	//base value is determined by 1/500 meaning that at 500 forward distance the background is black (space).
+  glClearColor(0.4 - (rocket.forwardDistance * 0.002), 0.79 - (rocket.forwardDistance * 0.002), 1 - (rocket.forwardDistance * 0.002), 1);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 
@@ -627,7 +627,9 @@ void display(void) {
 	if (breakRecord) {
 	  glColor3f(1, 0, 0);
 	  glRasterPos2i(90, 560);
-	  drawText("Congrats! You are setting a new game record!");
+    if (recordDisappearTime > 0) {
+	    drawText("Congrats! You are setting a new game record!");
+    }
 	}
 
 	//Undoing changes to display
@@ -720,105 +722,116 @@ void display(void) {
 
 void keyboard(unsigned char key, int x, int y) {
   if (screen == game) {
-	switch (key) {
-	  case 'q':exit(0);
-		break;
-		/*esc*/
-	  case 27:exit(0);
-		break;
+    switch (key) {
+      case 'Q':
+      case 'q': 
+      case 27:
+        exit(0);
+        break;
 
-    case 'w': //raises rocket
-      if (rocket.position.mX < 1.3) {
-        rocket.xOffset += rocket.turningSpeed;
+      case 'W':
+      case 'w': //raises rocket
+        if (rocket.position.mX < 1.3) {
+          rocket.xOffset += rocket.turningSpeed;
+        }
+        break;
+
+      case 'S':
+      case 's': //lowers rocket
+        if (rocket.position.mX > -1.3) {
+          rocket.xOffset -= rocket.turningSpeed;
+        }
+        break;
+
+      case 'A':
+      case 'a':
+      //Turn the rocket left and rotates
+      if (rocket.zOffset < 4.5) {
+        rocket.zOffset += rocket.turningSpeed;
+        rocket.angle += 0.5;
       }
       break;
 
-    case 's': //lowers rocket
-      if (rocket.position.mX > -1.3) {
-        rocket.xOffset -= rocket.turningSpeed;
-      }
-      break;
-	  case 'a':
-		//Turn the rocket left and rotates
-		if (rocket.zOffset < 4.5) {
-		  rocket.zOffset += rocket.turningSpeed;
-		  rocket.angle += 0.5;
-		}
-		break;
-	  case 'd':
-		//Turn the rocket right and rotates
-		if (rocket.zOffset > -4.5) {
-		  rocket.zOffset -= rocket.turningSpeed;
-		  rocket.angle -= 0.5;
+      case 'D':
+      case 'd':
+        //Turn the rocket right and rotates
+        if (rocket.zOffset > -4.5) {
+          rocket.zOffset -= rocket.turningSpeed;
+          rocket.angle -= 0.5;
+        }
+        break;
 
-		}
-		break;
-	  case 'v':cameraToggle = !cameraToggle;
-		break;
-    case 'p':paused = !paused;
-    break;
-	}
+      case 'V':
+      case 'v':
+        cameraToggle = !cameraToggle;
+        break;
+      case 'P':
+      case 'p':
+        paused = !paused;
+        break;
+    }
   } else if (screen == menu) {
-	switch (key) {
-	  case 'q':exit(0);
-		break;
+    switch (key) {
+      case 'Q':
+      case 'q':
+        exit(0);
+        break;
+      
+      case 32: //space bar
+      //reset rocket
+      rocket.forwardDistance = 0;
+      rocket.zOffset = 0;
+      rocket.xOffset = 0;
+      rocket.fuel = rocket.initialFuel + rocket.fuelUpgrades;
+      rocket.angle = 0;
+      rocketFlame.origin.mY = -5.40;
 
-	  case 27: //escape
-		exit(0);
-		break;
-	  case 32: //space bar
+      //reset object lists
+      coinSystem.v.clear();
+      obstacleSystem.v.clear();
+      rocketFlame.v.clear();
+      sceneSystem.v.clear();
 
-		//reset rocket
-		rocket.forwardDistance = 0;
-		rocket.zOffset = 0;
-    	rocket.xOffset = 0;
-		rocket.fuel = rocket.initialFuel + rocket.fuelUpgrades;
-		rocket.angle = 0;
-		rocketFlame.origin.mY = -5.40;
+      //reset breakRecord flag
+      breakRecord = false;
+      recordDisappearTime = 500;
 
-		//reset object lists
-		coinSystem.v.clear();
-		obstacleSystem.v.clear();
-		rocketFlame.v.clear();
-    sceneSystem.v.clear();
-
-		//reset breakRecord flag
-		breakRecord = false;
-
-		screen = game;
-		break;
-	}
+      screen = game;
+      break;
+    }
   }
   else if (screen == win) {
-	switch (key) {
-	  case 'q':exit(0);
-		break;
+	  switch (key) {
+      case 'Q':
+      case 'q':
+        exit(0);
+        break;
 
-	  case 27: //escape
-		exit(0);
-		break;
-	  case 32: //space bar
+      case 27: //escape
+        exit(0);
+        break;
+      case 32: //space bar
+        //reset rocket
+        infinite = true;
+        rocket.forwardDistance = 0;
+        rocket.zOffset = 0;
+          rocket.xOffset = 0;
+        rocket.fuel = rocket.initialFuel + rocket.fuelUpgrades;
+        rocket.angle = 0;
+        rocketFlame.origin.mY = -5.40;
 
-		//reset rocket
-		infinite = true;
-		rocket.forwardDistance = 0;
-		rocket.zOffset = 0;
-    	rocket.xOffset = 0;
-		rocket.fuel = rocket.initialFuel + rocket.fuelUpgrades;
-		rocket.angle = 0;
-		rocketFlame.origin.mY = -5.40;
+        //reset object lists
+        coinSystem.v.clear();
+        obstacleSystem.v.clear();
+        rocketFlame.v.clear();
 
-		//reset object lists
-		coinSystem.v.clear();
-		obstacleSystem.v.clear();
-		rocketFlame.v.clear();
+        //reset breakRecord flag
+        breakRecord = false;
+        recordDisappearTime = 500;
 
-		//reset breakRecord flag
-		breakRecord = false;
-
-		screen = game;
-		break;
-	}
+        screen = game;
+        break;
+    }
   }
   glutPostRedisplay();
 }
@@ -1011,6 +1024,10 @@ void FPS(int val) {
 	if (coinGetAge < 0) {
 	  coinGet = false;
 	}
+
+  if (breakRecord && recordDisappearTime > 0) {
+    recordDisappearTime -= 1;
+  }
 
 	if (!infinite) {
 		if (inRangeX(3.15, -3.15, rocket)

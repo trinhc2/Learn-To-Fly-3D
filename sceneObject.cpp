@@ -32,9 +32,6 @@ bool SceneObject::loadSceneObj(int type) {
     case 1:
       path = "./assets/scenery/star.obj";
       break;
-    case 2:
-      path = "./assets/scenery/cloud.obj";
-      break;
   }
   bool b = loadOBJ(path.c_str(), vertexIndices, uvIndices, normalIndices,
 				   out_vertices, out_uvs, out_normals);
