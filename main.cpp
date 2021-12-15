@@ -1,11 +1,16 @@
 #include <iostream>
 #include <algorithm>
+#include <math.h>
+#include <limits>
 #include "mathLib3D.h"
 #include "coin.h"
 #include "rocket.h"
 #include "obstacle.h"
 #include "particle.h"
+#include "sceneObject.h"
 #include <string>
+
+#define _USE_MATH_DEFINES
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -33,6 +38,11 @@ float coinGetAge = 0;
 // flag for breaking the previous record
 bool breakRecord = false;
 bool infinite = false; //if inifinite is true then the game goes on forever
+bool paused = false;
+
+// global variables for ray casting & ray picking
+double *m_start = new double[3];
+double *m_end = new double[3];
 
 float moonLocation = 20;
 
@@ -51,10 +61,15 @@ float textAmb[3][4] = { {1, 0, 0, 1},  {0, 1, 0, 1}, {1, 1, 1, 1}};
 float textDiff[3][4] = { {1, 0, 0, 1},  {0, 1, 0, 1}, {1, 1, 1, 1}};
 float textSpec[3][4] = { {1, 0, 0, 1}, {0, 1, 0, 1}, {1, 1, 1, 1}};
 
-float obstacleAmbient[4] = {0.19225f, 0.19225f, 0.19225f, 0.19225f};
-float obstacleDiffuse[4] = {0.50754f, 0.50754f, 0.50754f, 0.50754f};
+float obstacleAmbient[4] = {0.19225f, 0.19225f, 0.19225f, 1.0f};
+float obstacleDiffuse[4] = {0.50754f, 0.50754f, 0.50754f, 1.0f};
 float obstacleSpecular[4] = {0.508273f, 0.508273f, 0.508273f, 0.82f};
 float obstacleShine = 0.4f;
+
+// White translucent for cloud
+float cloudMat[4] = { 1, 1, 1, 0.5 };
+// Yellow translucent star
+float starMat[4] = { 1, 1, 0, 0.75 };
 
 float ambientDefault[4] = {0.2, 0.2, 0.2, 1.0};
 float diffuseDefault[4] = {0.8, 0.8, 0.8, 1.0};
@@ -66,6 +81,7 @@ Rocket rocket = Rocket();
 CoinSystem coinSystem = CoinSystem();
 ObstacleSystem obstacleSystem = ObstacleSystem();
 ParticleSystem rocketFlame = ParticleSystem();
+SceneObjectSystem sceneSystem = SceneObjectSystem();
 std::vector<Particle> explosion; //bomb explosion particles
 
 float position[4] = {1, 2 + rocket.forwardDistance, 0, 1};
@@ -274,47 +290,25 @@ float randomFloat(float x) {
 }
 
 // Display obj
-void displayObj(std::string name) {
-  std::vector<Point3D> out_vertices;
-  std::vector<Vec3D> out_normals;
-  std::vector<Point2D> out_uvs;
-  int size;
-
-  // Note: vertexIndices, uvIndices, and normalIndices all have the same value
-  if (name.compare("rocket") == 0) {
-	out_vertices = rocket.out_vertices;
-	out_normals = rocket.out_normals;
-	out_uvs = rocket.out_uvs;
-	size = rocket.vertexIndices.size();
-  } else if (name.compare("coin") == 0) {
-	out_vertices = coinSystem.out_vertices;
-	out_normals = coinSystem.out_normals;
-	out_uvs = coinSystem.out_uvs;
-	size = coinSystem.vertexIndices.size();
-  } else if (name.compare("obstacle") == 0) {
-	out_vertices = obstacleSystem.out_vertices;
-	out_normals = obstacleSystem.out_normals;
-	out_uvs = obstacleSystem.out_uvs;
-	size = obstacleSystem.vertexIndices.size();
-  }
-
+void displayObj(std::vector<Point3D> out_vertices, std::vector<Vec3D> out_normals,
+               std::vector<Point2D> out_uvs, int size) {
   // Draw triangles based on the vertices we read from our obj file
   // Each face consists of <vertex1, texture1, normal1, vertex2, texture2, normal2, vertex3, texture3, normal3>
   // That means we can loop through our "out" vectors and generate a bunch of vertices with normal and texture coords
   glPushMatrix();
   glBegin(GL_TRIANGLES);
   for (int i = 0; i < size; i++) {
-	//texture:
-	Point2D t = out_uvs[i];
-	glTexCoord2f(t.mX, t.mY);
+    //texture:
+    Point2D t = out_uvs[i];
+    glTexCoord2f(t.mX, t.mY);
 
-	//normal:
-	Vec3D v = out_normals[i];
-	glNormal3f(v.mX, v.mY, v.mZ);
+    //normal:
+    Vec3D v = out_normals[i];
+    glNormal3f(v.mX, v.mY, v.mZ);
 
-	//vertex:
-	Point3D m = out_vertices[i];
-	glVertex3f(m.mX, m.mY, m.mZ);
+    //vertex:
+    Point3D m = out_vertices[i];
+    glVertex3f(m.mX, m.mY, m.mZ);
   }
   glEnd();
 
@@ -344,7 +338,7 @@ void drawRocket(Rocket rocket) {
   glRotatef(rocket.angle, -1, 1, 0);
   //Scales the rocket size down, scales can be updated in future
   glScalef(0.3, 0.3, 0.3);
-  displayObj("rocket");
+  displayObj(rocket.out_vertices, rocket.out_normals, rocket.out_uvs, rocket.vertexIndices.size());
   glPopMatrix();
   // Reset texture binding after finishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -364,11 +358,45 @@ void drawCoins(CoinSystem coinSystem) {
 	glPushMatrix();
 	glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
 	glRotatef(coinSystem.rotation, 1, 0, 0);
-	displayObj("coin");
+	displayObj(coinSystem.out_vertices, coinSystem.out_normals, coinSystem.out_uvs, coinSystem.vertexIndices.size());
 	glPopMatrix();
   }
   // Reset texture binding after obstacle.cppfinishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void drawScenery(SceneObjectSystem sceneSystem) {
+  glColor3f(1, 1, 0);
+  for (std::size_t i = 0; i < sceneSystem.v.size(); i++) {
+    SceneObject sceneObj = sceneSystem.v.at(i);
+    Point3D pos = sceneObj.position;
+    glPushMatrix();
+    glTranslatef(pos.mX, pos.mY, pos.mZ);
+    if (sceneObj.type == 0) {
+      // Cloud: white translucent (0.5)
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, cloudMat);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, cloudMat);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, cloudMat);
+    } else if (sceneObj.type == 1) {
+      // Star: Yellow translucent (0.75)
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, starMat);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, starMat);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, starMat);
+    }
+    
+    // Scale only affects largeness
+    glScalef(sceneObj.size, sceneObj.size, sceneObj.size);
+    glRotatef(sceneObj.rotation, 0, 1, 0);
+    
+    displayObj(sceneSystem.v.at(i).out_vertices, sceneSystem.v.at(i).out_normals, 
+              sceneSystem.v.at(i).out_uvs, sceneSystem.v.at(i).vertexIndices.size());
+    glPopMatrix();
+
+    // Reset back to default material
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
+  }
 }
 
 /**
@@ -393,7 +421,7 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
       }else {
 		glBindTexture(GL_TEXTURE_2D, texture_map[1]);
 	  }
-      displayObj("obstacle");
+      displayObj(obstacleSystem.out_vertices, obstacleSystem.out_normals, obstacleSystem.out_uvs, obstacleSystem.vertexIndices.size());
 	// Reset texture binding after finishing draw
 	glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
@@ -458,7 +486,8 @@ void display(void) {
 
 	//calculate background colour based on forward distance * base value
 	//base value is determined by 1/250 meaning that at 250 forward distance the background is black (space).
-  	glClearColor(0.4 - (rocket.forwardDistance * 0.004), 0.79 - (rocket.forwardDistance * 0.004), 1 - (rocket.forwardDistance * 0.004), 1);
+  // note: changing this to 1/500 to make the clouds section a little longer
+  	glClearColor(0.4 - (rocket.forwardDistance * 0.002), 0.79 - (rocket.forwardDistance * 0.002), 1 - (rocket.forwardDistance * 0.002), 1);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 
@@ -485,7 +514,9 @@ void display(void) {
 				0);
 	  //gluLookAt(4, 4,4, 0,0,0, 0, 1, 0);
 	} else {
-	  gluLookAt(0, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
+	  gluLookAt(0, -8 + rocket.forwardDistance, rocket.position.mZ, 
+              0, rocket.forwardDistance, 0, 
+              1, 0, 0);
 	}
 
 
@@ -504,6 +535,7 @@ void display(void) {
 	drawRocket(rocket);
 	drawObstacles(obstacleSystem);
 	drawCoins(coinSystem);
+  drawScenery(sceneSystem);
 
 	glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube
 	glEnable(GL_TEXTURE_GEN_T);
@@ -723,6 +755,8 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	  case 'v':cameraToggle = !cameraToggle;
 		break;
+    case 'p':paused = !paused;
+    break;
 	}
   } else if (screen == menu) {
 	switch (key) {
@@ -746,6 +780,7 @@ void keyboard(unsigned char key, int x, int y) {
 		coinSystem.v.clear();
 		obstacleSystem.v.clear();
 		rocketFlame.v.clear();
+    sceneSystem.v.clear();
 
 		//reset breakRecord flag
 		breakRecord = false;
@@ -788,10 +823,104 @@ void keyboard(unsigned char key, int x, int y) {
   glutPostRedisplay();
 }
 
+void populateRayTracingValues(int x, int y) {
+  double matModelView[16], matProjection[16];
+  int viewport[4];
+  // get matrix and viewport:
+  glGetDoublev(GL_MODELVIEW_MATRIX, matModelView);
+  glGetDoublev(GL_PROJECTION_MATRIX, matProjection);
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  // window pos of mouse, Y is inverted on Windows
+  double winX = (double)x;
+  double winY = viewport[3] - (double)y;
+  std::cout << viewport[3] << std::endl;
+  // get point on the 'near' plane (third param is set to 0.0)
+  gluUnProject(winX, winY, 0.0, matModelView, matProjection,
+			   viewport, &m_start[0], &m_start[1], &m_start[2]);
+  gluUnProject(winX, winY, 1.0, matModelView, matProjection,
+			   viewport, &m_end[0], &m_end[1], &m_end[2]);
+}
+
+float getRayIntersectionTimeSphere(int x, int y, int z, float boundingBoxSize) {
+  // reference: Code Lecture on Ray Casting
+  double *R0 = new double[3];
+  double *Rd = new double[3];
+  double xDiff = m_end[0] - m_start[0];
+  double yDiff = m_end[1] - m_start[1];
+  double zDiff = m_end[2] - m_start[2];
+  std::cout << "ray origin: " << m_start[0] << " " << m_start[1] << " " << m_start[2] << std::endl; 
+  std::cout << "ray end: " << m_end[0] << " " << m_end[1] << " " << m_end[2] << std::endl; 
+
+  double mag = sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
+
+  R0 = m_start;
+  Rd[0] = xDiff / mag;
+  Rd[1] = yDiff / mag;
+  Rd[2] = zDiff / mag;
+
+  std::cout << "ray direction: " << Rd[0] << " " << Rd[1] << " " << Rd[2] << std::endl;
+
+  double A = Rd[0] * Rd[0] + Rd[1] * Rd[1] + Rd[2] * Rd[2];
+  double *R0Pc = new double[3];
+  R0Pc[0] = R0[0] - x;
+  R0Pc[1] = R0[1] - y;
+  R0Pc[2] = R0[2] - z;
+
+  double B = 2 * (R0Pc[0] * Rd[0] + R0Pc[1] * Rd[1] + R0Pc[2] * Rd[2]);
+  double C = (R0Pc[0] * R0Pc[0] + R0Pc[1] * R0Pc[1] + R0Pc[2] * R0Pc[2])
+	  - (boundingBoxSize * boundingBoxSize);
+
+  double discriminant = B * B - 4 * A * C;
+
+  if (discriminant < 0)
+	  return -1;
+  else {
+    double t0 = (-B + sqrt(discriminant)) / (2 * A);
+    double t1 = (-B - sqrt(discriminant)) / (2 * A);
+    // return the time for the ray to reach the closest intersection point for comparsion
+    return std::min(t0, t1);
+  }
+}
+
 void mouse(int button, int state, int x, int y) {
+  if (screen == menu) {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         mouseHandler.leftClickDown(x, viewportWidth - y);
     }
+  } else if (screen == game) {
+    if (button == GLUT_LEFT_BUTTON || button == GLUT_RIGHT_BUTTON) {
+      if (state == GLUT_DOWN) {
+        // populate ray tracing variables each time mouse is clicked
+        populateRayTracingValues(x, y);
+
+        // find the nearest object that intersects with the mouse ray
+        float closestIntersectionTime = std::numeric_limits<float>::max();
+        int closestObstacleIndex = -1;
+        for (unsigned int i = 0; i < obstacleSystem.v.size(); i++) {
+          Obstacle obstacle = obstacleSystem.v.at(i);
+          Point3D pos = obstacle.position;
+          float intersectionTime =
+              getRayIntersectionTimeSphere(pos.mX, pos.mY, pos.mZ, 0.5);
+          std::cout << "intersect time" << intersectionTime << std::endl;
+          std::cout << "mouse: " << x << "," << y << std::endl;
+          std::cout << "position: " << pos.mX << " " << pos.mY << " " << pos.mZ << std::endl;
+            // getRayIntersectionTimeSphere(x, y, getObstacleRadius());
+          if (intersectionTime >= 0 && intersectionTime < closestIntersectionTime) {
+            closestIntersectionTime = intersectionTime;
+            closestObstacleIndex = i;
+          }
+        }
+        // select the nearest object on mouse left click
+        if (button == GLUT_LEFT_BUTTON) {
+          if (closestObstacleIndex != -1) {
+            // Delete from v
+            obstacleSystem.v.erase(obstacleSystem.v.begin() + closestObstacleIndex);
+          }
+        }
+      }
+    }
+  }
+  glutPostRedisplay();
 }
 
 void gasIncrease() {
@@ -849,7 +978,7 @@ Handler turningButton = {
 };
 
 void FPS(int val) {
-  if (screen == game) {
+  if (screen == game && !paused) {
 	rocket.update();
 	maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
 	// detect if the player reaches beyond previous max record
@@ -860,6 +989,7 @@ void FPS(int val) {
 	coinSystem.update(rocket);
 	obstacleSystem.update(rocket, explosion, rocketFlame.v);
 	rocketFlame.update(rocket);
+  sceneSystem.update(rocket);
 
 	if (rocket.fuel <= 0) {
 	  screen = menu;
@@ -943,6 +1073,10 @@ void init(void) {
 
   glMatrixMode(GL_TEXTURE);
   glScalef(1, -1, -1);
+
+  // Enable blending for clouds
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 }
 
