@@ -42,7 +42,7 @@ SceneObjectSystem::SceneObjectSystem() {
 }
 
 void SceneObjectSystem::update(Rocket& r) {
-  if (v.size() < 20) {
+  if (v.size() < 10) {
     //for the y component, 20 is how far our drawing distance is, so we always spawn it off screen
     //randomFloat(40) to spread them apart
     //randomFloat(15) - 7.5 generates random number within our screen (does not need to be reachable by rocket since it's just visual effects)

@@ -45,7 +45,7 @@ int recordDisappearTime = 500; // Keeps on screen for 5 secs (300 frames)
 double *m_start = new double[3];
 double *m_end = new double[3];
 
-float moonLocation = 20;
+float moonLocation = 100;
 
 unsigned int viewportWidth  = 600;
 unsigned int viewportHeight = 600;
@@ -244,9 +244,9 @@ void printWelcomeMessage() {
   std::cout << "You are learning to fly with your rocket!" << std::endl;
   std::cout << "Your goal is to reach space. Unfortunately, your rocket is too weak right now." << std::endl;
   std::cout
-	  << "Collect coins along the path to upgrade your rocket. Avoid the obstacles; if you get hit, your fuel meter will decrease significantly."
+	  << "Collect coins along the path to upgrade your rocket. Avoid the obstacles; Red obstacles knock you back and black obstacles reduce your fuel by 20."
 	  << std::endl;
-  std::cout << "At the menu, press the number on your keyboard to use your Coins to purchase upgrades." << std::endl;
+  std::cout << "At the menu, click on the upgrades to use your Coins to purchase upgrades." << std::endl;
   std::cout
 	  << "On the game screen, the amount of fuel you have left is displayed on the bottom-left. Once your fuel reaches 0, you will be redirected to the main menu."
 	  << std::endl;
@@ -256,12 +256,18 @@ void printWelcomeMessage() {
   std::cout << "************************" << std::endl;
   std::cout << "***     CONTROLS     ***" << std::endl;
   std::cout << "************************" << std::endl;
-  std::cout << "Move: A/D (left/right)" << std::endl;
+  std::cout << "Move: W/A/S/D (Up/:eft/Down/Right)" << std::endl;
   std::cout << "Exit: Q/ESC" << std::endl;
-  std::cout << "Toggle birds-eye view: v" << std::endl;
+  std::cout << "Toggle birds-eye view: V" << std::endl;
+  std::cout << "Pause: P" << std::endl;
+  std::cout << "Destroy Obstacle: Left/Right Click" << std::endl;
   std::cout << "***   IN SHOP/MENU   ***" << std::endl;
   std::cout << "Start next run: Space bar" << std::endl;
-  std::cout << "Purchase Upgrades: Number Keys" << std::endl;
+  std::cout << "Purchase Upgrades: Mouse" << std::endl;
+  std::cout << "Exit: Q/ESC" << std::endl;
+  std::cout << "***   IN END SCREEN   ***" << std::endl;
+  std::cout << "Activate free play: Space bar" << std::endl;
+  std::cout << "Purchase Upgrades: Mouse" << std::endl;
   std::cout << "Exit: Q/ESC" << std::endl;
   std::cout << "************************" << std::endl;
   std::cout << "***   EXTRA DETAILS  ***" << std::endl;
@@ -552,6 +558,11 @@ void display(void) {
 		glPopMatrix();
 	}
 
+  //Draw ray
+	glBegin(GL_LINES);
+	glVertex3f(m_start[0], m_start[1], m_start[2]);
+	glVertex3f(m_end[0], m_end[1], m_end[2]);
+	glEnd();
 
 	glDisable(GL_TEXTURE_GEN_S);
 	glDisable(GL_TEXTURE_GEN_T);
@@ -589,6 +600,8 @@ void display(void) {
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[2]);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[2]);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+
+  glBindTexture(GL_TEXTURE_2D, 0);
 
 	glRasterPos2i(10, 10);
 	std::string fuelDisplay = "Fuel: " + std::to_string(rocket.fuel);
@@ -776,7 +789,9 @@ void keyboard(unsigned char key, int x, int y) {
       case 'q':
         exit(0);
         break;
-      
+      case 27: //escape
+        exit(0);
+        break;
       case 32: //space bar
       //reset rocket
       rocket.forwardDistance = 0;
@@ -846,7 +861,7 @@ void populateRayTracingValues(int x, int y) {
   // window pos of mouse, Y is inverted on Windows
   double winX = (double)x;
   double winY = viewport[3] - (double)y;
-  std::cout << viewport[3] << std::endl;
+  //std::cout << viewport[3] << std::endl;
   // get point on the 'near' plane (third param is set to 0.0)
   gluUnProject(winX, winY, 0.0, matModelView, matProjection,
 			   viewport, &m_start[0], &m_start[1], &m_start[2]);
@@ -861,8 +876,8 @@ float getRayIntersectionTimeSphere(int x, int y, int z, float boundingBoxSize) {
   double xDiff = m_end[0] - m_start[0];
   double yDiff = m_end[1] - m_start[1];
   double zDiff = m_end[2] - m_start[2];
-  std::cout << "ray origin: " << m_start[0] << " " << m_start[1] << " " << m_start[2] << std::endl; 
-  std::cout << "ray end: " << m_end[0] << " " << m_end[1] << " " << m_end[2] << std::endl; 
+  //std::cout << "ray origin: " << m_start[0] << " " << m_start[1] << " " << m_start[2] << std::endl; 
+  //std::cout << "ray end: " << m_end[0] << " " << m_end[1] << " " << m_end[2] << std::endl; 
 
   double mag = sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
 
@@ -871,7 +886,7 @@ float getRayIntersectionTimeSphere(int x, int y, int z, float boundingBoxSize) {
   Rd[1] = yDiff / mag;
   Rd[2] = zDiff / mag;
 
-  std::cout << "ray direction: " << Rd[0] << " " << Rd[1] << " " << Rd[2] << std::endl;
+  //std::cout << "ray direction: " << Rd[0] << " " << Rd[1] << " " << Rd[2] << std::endl;
 
   double A = Rd[0] * Rd[0] + Rd[1] * Rd[1] + Rd[2] * Rd[2];
   double *R0Pc = new double[3];
@@ -884,12 +899,15 @@ float getRayIntersectionTimeSphere(int x, int y, int z, float boundingBoxSize) {
 	  - (boundingBoxSize * boundingBoxSize);
 
   double discriminant = B * B - 4 * A * C;
+  //std::cout << discriminant << "\n";
 
-  if (discriminant < 0)
-	  return -1;
+  if (discriminant < 0) {
+    return -1;
+  }
   else {
     double t0 = (-B + sqrt(discriminant)) / (2 * A);
     double t1 = (-B - sqrt(discriminant)) / (2 * A);
+    //printf("t0: %f , t1: %f \n", t0, t1);
     // return the time for the ray to reach the closest intersection point for comparsion
     return std::min(t0, t1);
   }
@@ -914,9 +932,9 @@ void mouse(int button, int state, int x, int y) {
           Point3D pos = obstacle.position;
           float intersectionTime =
               getRayIntersectionTimeSphere(pos.mX, pos.mY, pos.mZ, 0.5);
-          std::cout << "intersect time" << intersectionTime << std::endl;
-          std::cout << "mouse: " << x << "," << y << std::endl;
-          std::cout << "position: " << pos.mX << " " << pos.mY << " " << pos.mZ << std::endl;
+          //std::cout << "intersect time" << intersectionTime << std::endl;
+          //std::cout << "mouse: " << x << "," << y << std::endl;
+          //std::cout << "position: " << pos.mX << " " << pos.mY << " " << pos.mZ << std::endl;
             // getRayIntersectionTimeSphere(x, y, getObstacleRadius());
           if (intersectionTime >= 0 && intersectionTime < closestIntersectionTime) {
             closestIntersectionTime = intersectionTime;
@@ -1037,8 +1055,6 @@ void FPS(int val) {
 		}
 	}
 
-
-  } else if (screen == menu) {
 
   }
 
