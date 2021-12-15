@@ -1,11 +1,15 @@
 #include <iostream>
 #include <algorithm>
+#include <math.h>
+#include <limits>
 #include "mathLib3D.h"
 #include "coin.h"
 #include "rocket.h"
 #include "obstacle.h"
 #include "particle.h"
 #include <string>
+
+#define _USE_MATH_DEFINES
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -33,6 +37,11 @@ float coinGetAge = 0;
 // flag for breaking the previous record
 bool breakRecord = false;
 bool infinite = false; //if inifinite is true then the game goes on forever
+bool paused = false;
+
+// global variables for ray casting & ray picking
+double *m_start = new double[3];
+double *m_end = new double[3];
 
 float moonLocation = 20;
 
@@ -296,6 +305,7 @@ void displayObj(std::string name) {
 	out_normals = obstacleSystem.out_normals;
 	out_uvs = obstacleSystem.out_uvs;
 	size = obstacleSystem.vertexIndices.size();
+  glutWireSphere(0.5, 16, 8);
   }
 
   // Draw triangles based on the vertices we read from our obj file
@@ -485,7 +495,9 @@ void display(void) {
 				0);
 	  //gluLookAt(4, 4,4, 0,0,0, 0, 1, 0);
 	} else {
-	  gluLookAt(0, -8 + rocket.forwardDistance, rocket.position.mZ, 0, rocket.forwardDistance, 0, 1, 0, 0);
+	  gluLookAt(0, -8 + rocket.forwardDistance, rocket.position.mZ, 
+              0, rocket.forwardDistance, 0, 
+              1, 0, 0);
 	}
 
 
@@ -723,6 +735,8 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	  case 'v':cameraToggle = !cameraToggle;
 		break;
+    case 'p':paused = !paused;
+    break;
 	}
   } else if (screen == menu) {
 	switch (key) {
@@ -788,10 +802,104 @@ void keyboard(unsigned char key, int x, int y) {
   glutPostRedisplay();
 }
 
+void populateRayTracingValues(int x, int y) {
+  double matModelView[16], matProjection[16];
+  int viewport[4];
+  // get matrix and viewport:
+  glGetDoublev(GL_MODELVIEW_MATRIX, matModelView);
+  glGetDoublev(GL_PROJECTION_MATRIX, matProjection);
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  // window pos of mouse, Y is inverted on Windows
+  double winX = (double)x;
+  double winY = viewport[3] - (double)y;
+  std::cout << viewport[3] << std::endl;
+  // get point on the 'near' plane (third param is set to 0.0)
+  gluUnProject(winX, winY, 0.0, matModelView, matProjection,
+			   viewport, &m_start[0], &m_start[1], &m_start[2]);
+  gluUnProject(winX, winY, 1.0, matModelView, matProjection,
+			   viewport, &m_end[0], &m_end[1], &m_end[2]);
+}
+
+float getRayIntersectionTimeSphere(int x, int y, int z, float boundingBoxSize) {
+  // reference: Code Lecture on Ray Casting
+  double *R0 = new double[3];
+  double *Rd = new double[3];
+  double xDiff = m_end[0] - m_start[0];
+  double yDiff = m_end[1] - m_start[1];
+  double zDiff = m_end[2] - m_start[2];
+  std::cout << "ray origin: " << m_start[0] << " " << m_start[1] << " " << m_start[2] << std::endl; 
+  std::cout << "ray end: " << m_end[0] << " " << m_end[1] << " " << m_end[2] << std::endl; 
+
+  double mag = sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
+
+  R0 = m_start;
+  Rd[0] = xDiff / mag;
+  Rd[1] = yDiff / mag;
+  Rd[2] = zDiff / mag;
+
+  std::cout << "ray direction: " << Rd[0] << " " << Rd[1] << " " << Rd[2] << std::endl;
+
+  double A = Rd[0] * Rd[0] + Rd[1] * Rd[1] + Rd[2] * Rd[2];
+  double *R0Pc = new double[3];
+  R0Pc[0] = R0[0] - x;
+  R0Pc[1] = R0[1] - y;
+  R0Pc[2] = R0[2] - z;
+
+  double B = 2 * (R0Pc[0] * Rd[0] + R0Pc[1] * Rd[1] + R0Pc[2] * Rd[2]);
+  double C = (R0Pc[0] * R0Pc[0] + R0Pc[1] * R0Pc[1] + R0Pc[2] * R0Pc[2])
+	  - (boundingBoxSize * boundingBoxSize);
+
+  double discriminant = B * B - 4 * A * C;
+
+  if (discriminant < 0)
+	  return -1;
+  else {
+    double t0 = (-B + sqrt(discriminant)) / (2 * A);
+    double t1 = (-B - sqrt(discriminant)) / (2 * A);
+    // return the time for the ray to reach the closest intersection point for comparsion
+    return std::min(t0, t1);
+  }
+}
+
 void mouse(int button, int state, int x, int y) {
+  if (screen == menu) {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         mouseHandler.leftClickDown(x, viewportWidth - y);
     }
+  } else if (screen == game) {
+    if (button == GLUT_LEFT_BUTTON || button == GLUT_RIGHT_BUTTON) {
+      if (state == GLUT_DOWN) {
+        // populate ray tracing variables each time mouse is clicked
+        populateRayTracingValues(x, y);
+
+        // find the nearest object that intersects with the mouse ray
+        float closestIntersectionTime = std::numeric_limits<float>::max();
+        int closestObstacleIndex = -1;
+        for (unsigned int i = 0; i < obstacleSystem.v.size(); i++) {
+          Obstacle obstacle = obstacleSystem.v.at(i);
+          Point3D pos = obstacle.position;
+          float intersectionTime =
+              getRayIntersectionTimeSphere(pos.mX, pos.mY, pos.mZ, 0.5);
+          std::cout << "intersect time" << intersectionTime << std::endl;
+          std::cout << "mouse: " << x << "," << y << std::endl;
+          std::cout << "position: " << pos.mX << " " << pos.mY << " " << pos.mZ << std::endl;
+            // getRayIntersectionTimeSphere(x, y, getObstacleRadius());
+          if (intersectionTime >= 0 && intersectionTime < closestIntersectionTime) {
+            closestIntersectionTime = intersectionTime;
+            closestObstacleIndex = i;
+          }
+        }
+        // select the nearest object on mouse left click
+        if (button == GLUT_LEFT_BUTTON) {
+          if (closestObstacleIndex != -1) {
+            // Delete from v
+            obstacleSystem.v.erase(obstacleSystem.v.begin() + closestObstacleIndex);
+          }
+        }
+      }
+    }
+  }
+  glutPostRedisplay();
 }
 
 void gasIncrease() {
@@ -849,7 +957,7 @@ Handler turningButton = {
 };
 
 void FPS(int val) {
-  if (screen == game) {
+  if (screen == game && !paused) {
 	rocket.update();
 	maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
 	// detect if the player reaches beyond previous max record
