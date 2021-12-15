@@ -45,7 +45,7 @@ int recordDisappearTime = 500; // Keeps on screen for 5 secs (300 frames)
 double *m_start = new double[3];
 double *m_end = new double[3];
 
-float moonLocation = 100;
+float moonLocation = 500; //set to 500 for final.
 
 unsigned int viewportWidth  = 600;
 unsigned int viewportHeight = 600;
@@ -436,7 +436,7 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
 }
 
 /**
- * Draws Rocket trail 
+ * Draws Rocket trail and explosions
  */
 void drawParticles(std::vector<Particle> v) {
   //bind fire texture
@@ -492,7 +492,7 @@ void display(void) {
   if (screen == game) { //If state of screen is on game, draw the game
 
 	//calculate background colour based on forward distance * base value
-	//base value is determined by 1/500 meaning that at 500 forward distance the background is black (space).
+	//base value is determined by 1/250 meaning that at 250 forward distance the background is black (space).
   glClearColor(0.4 - (rocket.forwardDistance * 0.002), 0.79 - (rocket.forwardDistance * 0.002), 1 - (rocket.forwardDistance * 0.002), 1);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
@@ -525,8 +525,6 @@ void display(void) {
               1, 0, 0);
 	}
 
-
-	// make y arbitrarily high to simulate an infinite long road ahead
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
@@ -543,13 +541,14 @@ void display(void) {
 	drawCoins(coinSystem);
   drawScenery(sceneSystem);
 
-	glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube
+  //https://stackoverflow.com/questions/327043/how-to-apply-texture-to-glutsolidcube
+	glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube (particles)
 	glEnable(GL_TEXTURE_GEN_T);
 	drawParticles(rocketFlame.v);
 	drawParticles(explosion);
 
-	//Drawing moon at y=100
-	if (!infinite) {
+	//Drawing moon at y=moonLocation and only if rocket is near
+	if (!infinite && rocket.forwardDistance > moonLocation - 30) {
 		glPushMatrix();
 			glBindTexture(GL_TEXTURE_2D, texture_map[3]);
 			glTranslatef(0, moonLocation, 0);
@@ -721,8 +720,8 @@ void display(void) {
 	glRasterPos2i(150, 300);
 	drawText("Press Space Bar to continue playing!");
 
-	glRasterPos2i(175, 260);
-	drawText("Press Escape to continue Quit");
+	glRasterPos2i(210, 260);
+	drawText("Press Escape to Quit");
 
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
