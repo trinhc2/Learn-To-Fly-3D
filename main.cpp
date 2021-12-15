@@ -7,6 +7,7 @@
 #include "rocket.h"
 #include "obstacle.h"
 #include "particle.h"
+#include "sceneObject.h"
 #include <string>
 
 #define _USE_MATH_DEFINES
@@ -60,10 +61,15 @@ float textAmb[3][4] = { {1, 0, 0, 1},  {0, 1, 0, 1}, {1, 1, 1, 1}};
 float textDiff[3][4] = { {1, 0, 0, 1},  {0, 1, 0, 1}, {1, 1, 1, 1}};
 float textSpec[3][4] = { {1, 0, 0, 1}, {0, 1, 0, 1}, {1, 1, 1, 1}};
 
-float obstacleAmbient[4] = {0.19225f, 0.19225f, 0.19225f, 0.19225f};
-float obstacleDiffuse[4] = {0.50754f, 0.50754f, 0.50754f, 0.50754f};
+float obstacleAmbient[4] = {0.19225f, 0.19225f, 0.19225f, 1.0f};
+float obstacleDiffuse[4] = {0.50754f, 0.50754f, 0.50754f, 1.0f};
 float obstacleSpecular[4] = {0.508273f, 0.508273f, 0.508273f, 0.82f};
 float obstacleShine = 0.4f;
+
+// White translucent for cloud
+float cloudMat[4] = { 1, 1, 1, 0.5 };
+// Yellow translucent star
+float starMat[4] = { 1, 1, 0, 0.75 };
 
 float ambientDefault[4] = {0.2, 0.2, 0.2, 1.0};
 float diffuseDefault[4] = {0.8, 0.8, 0.8, 1.0};
@@ -75,6 +81,7 @@ Rocket rocket = Rocket();
 CoinSystem coinSystem = CoinSystem();
 ObstacleSystem obstacleSystem = ObstacleSystem();
 ParticleSystem rocketFlame = ParticleSystem();
+SceneObjectSystem sceneSystem = SceneObjectSystem();
 std::vector<Particle> explosion; //bomb explosion particles
 
 float position[4] = {1, 2 + rocket.forwardDistance, 0, 1};
@@ -283,48 +290,25 @@ float randomFloat(float x) {
 }
 
 // Display obj
-void displayObj(std::string name) {
-  std::vector<Point3D> out_vertices;
-  std::vector<Vec3D> out_normals;
-  std::vector<Point2D> out_uvs;
-  int size;
-
-  // Note: vertexIndices, uvIndices, and normalIndices all have the same value
-  if (name.compare("rocket") == 0) {
-	out_vertices = rocket.out_vertices;
-	out_normals = rocket.out_normals;
-	out_uvs = rocket.out_uvs;
-	size = rocket.vertexIndices.size();
-  } else if (name.compare("coin") == 0) {
-	out_vertices = coinSystem.out_vertices;
-	out_normals = coinSystem.out_normals;
-	out_uvs = coinSystem.out_uvs;
-	size = coinSystem.vertexIndices.size();
-  } else if (name.compare("obstacle") == 0) {
-	out_vertices = obstacleSystem.out_vertices;
-	out_normals = obstacleSystem.out_normals;
-	out_uvs = obstacleSystem.out_uvs;
-	size = obstacleSystem.vertexIndices.size();
-  glutWireSphere(0.5, 16, 8);
-  }
-
+void displayObj(std::vector<Point3D> out_vertices, std::vector<Vec3D> out_normals,
+               std::vector<Point2D> out_uvs, int size) {
   // Draw triangles based on the vertices we read from our obj file
   // Each face consists of <vertex1, texture1, normal1, vertex2, texture2, normal2, vertex3, texture3, normal3>
   // That means we can loop through our "out" vectors and generate a bunch of vertices with normal and texture coords
   glPushMatrix();
   glBegin(GL_TRIANGLES);
   for (int i = 0; i < size; i++) {
-	//texture:
-	Point2D t = out_uvs[i];
-	glTexCoord2f(t.mX, t.mY);
+    //texture:
+    Point2D t = out_uvs[i];
+    glTexCoord2f(t.mX, t.mY);
 
-	//normal:
-	Vec3D v = out_normals[i];
-	glNormal3f(v.mX, v.mY, v.mZ);
+    //normal:
+    Vec3D v = out_normals[i];
+    glNormal3f(v.mX, v.mY, v.mZ);
 
-	//vertex:
-	Point3D m = out_vertices[i];
-	glVertex3f(m.mX, m.mY, m.mZ);
+    //vertex:
+    Point3D m = out_vertices[i];
+    glVertex3f(m.mX, m.mY, m.mZ);
   }
   glEnd();
 
@@ -354,7 +338,7 @@ void drawRocket(Rocket rocket) {
   glRotatef(rocket.angle, -1, 1, 0);
   //Scales the rocket size down, scales can be updated in future
   glScalef(0.3, 0.3, 0.3);
-  displayObj("rocket");
+  displayObj(rocket.out_vertices, rocket.out_normals, rocket.out_uvs, rocket.vertexIndices.size());
   glPopMatrix();
   // Reset texture binding after finishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -374,11 +358,45 @@ void drawCoins(CoinSystem coinSystem) {
 	glPushMatrix();
 	glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
 	glRotatef(coinSystem.rotation, 1, 0, 0);
-	displayObj("coin");
+	displayObj(coinSystem.out_vertices, coinSystem.out_normals, coinSystem.out_uvs, coinSystem.vertexIndices.size());
 	glPopMatrix();
   }
   // Reset texture binding after obstacle.cppfinishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void drawScenery(SceneObjectSystem sceneSystem) {
+  glColor3f(1, 1, 0);
+  for (std::size_t i = 0; i < sceneSystem.v.size(); i++) {
+    SceneObject sceneObj = sceneSystem.v.at(i);
+    Point3D pos = sceneObj.position;
+    glPushMatrix();
+    glTranslatef(pos.mX, pos.mY, pos.mZ);
+    if (sceneObj.type == 0) {
+      // Cloud: white translucent (0.5)
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, cloudMat);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, cloudMat);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, cloudMat);
+    } else if (sceneObj.type == 1) {
+      // Star: Yellow translucent (0.75)
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, starMat);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, starMat);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, starMat);
+    }
+    
+    // Scale only affects largeness
+    glScalef(sceneObj.size, sceneObj.size, sceneObj.size);
+    glRotatef(sceneObj.rotation, 0, 1, 0);
+    
+    displayObj(sceneSystem.v.at(i).out_vertices, sceneSystem.v.at(i).out_normals, 
+              sceneSystem.v.at(i).out_uvs, sceneSystem.v.at(i).vertexIndices.size());
+    glPopMatrix();
+
+    // Reset back to default material
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
+  }
 }
 
 /**
@@ -403,7 +421,7 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
       }else {
 		glBindTexture(GL_TEXTURE_2D, texture_map[1]);
 	  }
-      displayObj("obstacle");
+      displayObj(obstacleSystem.out_vertices, obstacleSystem.out_normals, obstacleSystem.out_uvs, obstacleSystem.vertexIndices.size());
 	// Reset texture binding after finishing draw
 	glBindTexture(GL_TEXTURE_2D, 0);
     glPopMatrix();
@@ -468,7 +486,8 @@ void display(void) {
 
 	//calculate background colour based on forward distance * base value
 	//base value is determined by 1/250 meaning that at 250 forward distance the background is black (space).
-  	glClearColor(0.4 - (rocket.forwardDistance * 0.004), 0.79 - (rocket.forwardDistance * 0.004), 1 - (rocket.forwardDistance * 0.004), 1);
+  // note: changing this to 1/500 to make the clouds section a little longer
+  	glClearColor(0.4 - (rocket.forwardDistance * 0.002), 0.79 - (rocket.forwardDistance * 0.002), 1 - (rocket.forwardDistance * 0.002), 1);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 
@@ -516,6 +535,7 @@ void display(void) {
 	drawRocket(rocket);
 	drawObstacles(obstacleSystem);
 	drawCoins(coinSystem);
+  drawScenery(sceneSystem);
 
 	glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube
 	glEnable(GL_TEXTURE_GEN_T);
@@ -760,6 +780,7 @@ void keyboard(unsigned char key, int x, int y) {
 		coinSystem.v.clear();
 		obstacleSystem.v.clear();
 		rocketFlame.v.clear();
+    sceneSystem.v.clear();
 
 		//reset breakRecord flag
 		breakRecord = false;
@@ -968,6 +989,7 @@ void FPS(int val) {
 	coinSystem.update(rocket);
 	obstacleSystem.update(rocket, explosion, rocketFlame.v);
 	rocketFlame.update(rocket);
+  sceneSystem.update(rocket);
 
 	if (rocket.fuel <= 0) {
 	  screen = menu;
@@ -1051,6 +1073,10 @@ void init(void) {
 
   glMatrixMode(GL_TEXTURE);
   glScalef(1, -1, -1);
+
+  // Enable blending for clouds
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 }
 
