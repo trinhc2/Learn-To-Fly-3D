@@ -89,8 +89,10 @@ On the game screen, the amount of fuel you have left is displayed on the bottom-
 - Concepts implemented are:
     - Camera, 3D transformations, etc.
     - Object (.obj file) loader
+    - Lighting
     - Textures
     - Raypicking
     - Blending
-    - Drawing Text
+    - Non-Geometric Primitives (Drawing Text and User Interface)
+    - Particle Systems
     
