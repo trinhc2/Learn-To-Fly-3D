@@ -27,14 +27,14 @@ Rocket::Rocket() {
 void Rocket::update() {
   //While the rocket has fuel move forward and decrement fuel gauge
   if (fuel > 0) {
-	forwardDistance += forwardSpeed;
-	fuel -= 0.1;
+    forwardDistance += forwardSpeed;
+    fuel -= 0.1;
   } else {
-	fuel = 0;
+	  fuel = 0;
   }
-  position.mZ = zOffset;
-  position.mX = -1.3 + xOffset;
-}
+    position.mZ = zOffset;
+    position.mX = -1.3 + xOffset;
+  }
 
 bool Rocket::loadRocketObj(const char* path) {
     bool b = loadOBJ(path, vertexIndices, uvIndices, normalIndices, 

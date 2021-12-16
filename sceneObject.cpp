@@ -51,7 +51,6 @@ void SceneObjectSystem::update(Rocket& r) {
     //generate object of random types from all supported types
     int type = -1;
     float rot = 0;
-    float size = 1;
     if (r.forwardDistance >= 20 && r.forwardDistance < 200) {
       type = 0; // cloud
     // Spawn both clouds and stars at an in-between distance

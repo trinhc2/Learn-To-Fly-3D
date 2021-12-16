@@ -119,20 +119,16 @@ GLubyte *LoadPPM(char *file, int *width, int *height, int *max) {
   fd = fopen(file, "r");
   fscanf(fd, "%[^\n] ", b);
   if (b[0] != 'P' || b[1] != '3') {
-	printf("%s is not a PPM file!\n", file);
-	exit(0);
+	  exit(0);
   }
-  printf("%s is a PPM file\n", file);
   fscanf(fd, "%c", &c);
-  while (c == '#') {
-	fscanf(fd, "%[^\n] ", b);
-	printf("%s\n", b);
-	fscanf(fd, "%c", &c);
+    while (c == '#') {
+    fscanf(fd, "%[^\n] ", b);
+    printf("%s\n", b);
+    fscanf(fd, "%c", &c);
   }
   ungetc(c, fd);
   fscanf(fd, "%d %d %d", &n, &m, &k);
-
-  printf("%d rows  %d columns  max value= %d\n", n, m, k);
 
   nm = n * m;
 
@@ -141,10 +137,10 @@ GLubyte *LoadPPM(char *file, int *width, int *height, int *max) {
   s = 255.0 / k;
 
   for (i = 0; i < nm; i++) {
-	fscanf(fd, "%d %d %d", &red, &green, &blue);
-	img[3 * nm - 3 * i - 3] = red * s;
-	img[3 * nm - 3 * i - 2] = green * s;
-	img[3 * nm - 3 * i - 1] = blue * s;
+    fscanf(fd, "%d %d %d", &red, &green, &blue);
+    img[3 * nm - 3 * i - 3] = red * s;
+    img[3 * nm - 3 * i - 2] = green * s;
+    img[3 * nm - 3 * i - 1] = blue * s;
   }
 
   *width = n;
@@ -165,70 +161,70 @@ void loadTexture(char *filename, int index) {
 }
 
 struct Image {
-    int mWidth;
-    int mHeight;
+  int mWidth;
+  int mHeight;
 	int mMax;
-    GLubyte * mImage;
+  GLubyte * mImage;
 
-    void load(char * filename) {
-        mImage = LoadPPM(filename, &mWidth, &mHeight, &mMax);
-    }
+  void load(char * filename) {
+    mImage = LoadPPM(filename, &mWidth, &mHeight, &mMax);
+  }
 
-    void draw(unsigned int x, unsigned int y) {
-        glRasterPos2i(x + mWidth, y);
-        glPixelZoom(-0.9, 0.9); //flip image and scale down to 0.9
-        glDrawPixels(mWidth, mHeight, GL_RGB, GL_UNSIGNED_BYTE, mImage);
-    }
+  void draw(unsigned int x, unsigned int y) {
+    glRasterPos2i(x + mWidth, y);
+    glPixelZoom(-0.9, 0.9); //flip image and scale down to 0.9
+    glDrawPixels(mWidth, mHeight, GL_RGB, GL_UNSIGNED_BYTE, mImage);
+  }
 };
 
 struct Handler {
-    unsigned int mLeft, mRight, mTop, mBottom;
-    void (*mHandlerFunc)();
+  unsigned int mLeft, mRight, mTop, mBottom;
+  void (*mHandlerFunc)();
 
-    bool isInBounds(unsigned int x, unsigned int y) {
-        return (mLeft <= x && x <= mRight) && (mBottom <= y && y <= mTop);
-    }
+  bool isInBounds(unsigned int x, unsigned int y) {
+    return (mLeft <= x && x <= mRight) && (mBottom <= y && y <= mTop);
+  }
 
-    void handleClickAt(unsigned int x, unsigned int y) {
-        if (isInBounds(x, y)) {
-            mHandlerFunc();
-        }
+  void handleClickAt(unsigned int x, unsigned int y) {
+    if (isInBounds(x, y)) {
+        mHandlerFunc();
     }
+  }
 
-    void drawBoxVertices() {
-        glVertex3f(mLeft, mTop, 1);
-        glVertex3f(mLeft, mBottom, 1);
-        glVertex3f(mRight, mTop, 1);
-        glVertex3f(mRight, mBottom, 1);
-        glVertex3f(mLeft, mTop, 1);
-        glVertex3f(mRight, mTop, 1);
-        glVertex3f(mLeft, mBottom, 1);
-        glVertex3f(mRight, mBottom, 1);
-    }
+  void drawBoxVertices() {
+    glVertex3f(mLeft, mTop, 1);
+    glVertex3f(mLeft, mBottom, 1);
+    glVertex3f(mRight, mTop, 1);
+    glVertex3f(mRight, mBottom, 1);
+    glVertex3f(mLeft, mTop, 1);
+    glVertex3f(mRight, mTop, 1);
+    glVertex3f(mLeft, mBottom, 1);
+    glVertex3f(mRight, mBottom, 1);
+  }
 };
 
 struct InteractionHandler {
-    std::vector<Handler *> mHandlers;
+  std::vector<Handler *> mHandlers;
 
-    void leftClickDown(int x, int y) {
-        for (Handler *handler : mHandlers) {
-            handler->handleClickAt(x, y);
-        }
+  void leftClickDown(int x, int y) {
+    for (Handler *handler : mHandlers) {
+        handler->handleClickAt(x, y);
     }
+  }
 
-    void drawHandlers() {
-        glColor3f(1, 1, 1);
-        glLineWidth(2);
-        glBegin(GL_LINES);
-        for (Handler *handler : mHandlers) {
-            handler->drawBoxVertices();
-        }
-        glEnd();
+  void drawHandlers() {
+    glColor3f(1, 1, 1);
+    glLineWidth(2);
+    glBegin(GL_LINES);
+    for (Handler *handler : mHandlers) {
+        handler->drawBoxVertices();
     }
+    glEnd();
+  }
 
-    void addHandler(Handler *handler) {
-        mHandlers.push_back(handler);
-    }
+  void addHandler(Handler *handler) {
+    mHandlers.push_back(handler);
+  }
 };
 
 InteractionHandler mouseHandler;
@@ -241,8 +237,8 @@ void printWelcomeMessage() {
   std::cout << "************************" << std::endl;
   std::cout << "***   INSTRUCTIONS   ***" << std::endl;
   std::cout << "************************" << std::endl;
-  std::cout << "You are learning to fly with your rocket!" << std::endl;
-  std::cout << "Your goal is to reach space. Unfortunately, your rocket is too weak right now." << std::endl;
+  std::cout << "You are learning to fly with your rocket." << std::endl;
+  std::cout << "Your goal is to reach the moon! Unfortunately, your rocket is too weak right now." << std::endl;
   std::cout
 	  << "Collect coins along the path to upgrade your rocket. Avoid the obstacles; Red obstacles knock you back and black obstacles reduce your fuel by 20."
 	  << std::endl;
@@ -256,7 +252,7 @@ void printWelcomeMessage() {
   std::cout << "************************" << std::endl;
   std::cout << "***     CONTROLS     ***" << std::endl;
   std::cout << "************************" << std::endl;
-  std::cout << "Move: W/A/S/D (Up/:eft/Down/Right)" << std::endl;
+  std::cout << "Move: W/A/S/D (Up/Left/Down/Right)" << std::endl;
   std::cout << "Exit: Q/ESC" << std::endl;
   std::cout << "Toggle birds-eye view: V" << std::endl;
   std::cout << "Pause: P" << std::endl;
@@ -272,7 +268,8 @@ void printWelcomeMessage() {
   std::cout << "************************" << std::endl;
   std::cout << "***   EXTRA DETAILS  ***" << std::endl;
   std::cout << "************************" << std::endl;
-  std::cout << "todo :)" << std::endl;
+  std::cout << "Clouds and Stars are decoration-only; you can collide into them." << std::endl;
+  std::cout << "Your goal is to reach the moon. Good luck & have fun!" << std::endl;
 
 }
 
@@ -329,23 +326,23 @@ void drawRocket(Rocket rocket) {
   glBindTexture(GL_TEXTURE_2D, texture_map[2]);
   glPushMatrix();
 
-  glColor3f(0.60, 0.61, 0.62);//grey/silver colour
+    glColor3f(0.60, 0.61, 0.62);//grey/silver colour
 
-  //setting material to default because we are using a texture
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+    //setting material to default because we are using a texture
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
 
-  //Place the rocket at its position + how much it has traveled
-  glTranslatef(rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ);
-  //Rotate the rocket if it has been turning
-  glRotatef(2.5, 1, 0, 0); //points rocket more to the left so it pointing forwards by default
-  glRotatef(-10, 0, 1, 0); //rotates rocket along y so it is not on a diagonal by default
-  glRotatef(rocket.angle, -1, 1, 0);
-  //Scales the rocket size down, scales can be updated in future
-  glScalef(0.3, 0.3, 0.3);
-  displayObj(rocket.out_vertices, rocket.out_normals, rocket.out_uvs, rocket.vertexIndices.size());
+    //Place the rocket at its position + how much it has traveled
+    glTranslatef(rocket.position.mX, rocket.position.mY + rocket.forwardDistance, rocket.position.mZ);
+    //Rotate the rocket if it has been turning
+    glRotatef(2.5, 1, 0, 0); //points rocket more to the left so it pointing forwards by default
+    glRotatef(-10, 0, 1, 0); //rotates rocket along y so it is not on a diagonal by default
+    glRotatef(rocket.angle, -1, 1, 0);
+    //Scales the rocket size down, scales can be updated in future
+    glScalef(0.3, 0.3, 0.3);
+    displayObj(rocket.out_vertices, rocket.out_normals, rocket.out_uvs, rocket.vertexIndices.size());
   glPopMatrix();
   // Reset texture binding after finishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -362,11 +359,11 @@ void drawCoins(CoinSystem coinSystem) {
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, coinSpecular);
   glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, coinShine);
   for (std::size_t i = 0; i < coinSystem.v.size(); i++) {
-	glPushMatrix();
-	glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
-	glRotatef(coinSystem.rotation, 1, 0, 0);
-	displayObj(coinSystem.out_vertices, coinSystem.out_normals, coinSystem.out_uvs, coinSystem.vertexIndices.size());
-	glPopMatrix();
+    glPushMatrix();
+      glTranslatef(coinSystem.v.at(i).position.mX, coinSystem.v.at(i).position.mY, coinSystem.v.at(i).position.mZ);
+      glRotatef(coinSystem.rotation, 1, 0, 0);
+      displayObj(coinSystem.out_vertices, coinSystem.out_normals, coinSystem.out_uvs, coinSystem.vertexIndices.size());
+    glPopMatrix();
   }
   // Reset texture binding after obstacle.cppfinishing draw
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -378,25 +375,26 @@ void drawScenery(SceneObjectSystem sceneSystem) {
     SceneObject sceneObj = sceneSystem.v.at(i);
     Point3D pos = sceneObj.position;
     glPushMatrix();
-    glTranslatef(pos.mX, pos.mY, pos.mZ);
-    if (sceneObj.type == 0) {
-      // Cloud: white translucent (0.5)
-      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, cloudMat);
-      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, cloudMat);
-      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, cloudMat);
-    } else if (sceneObj.type == 1) {
-      // Star: Yellow translucent (0.75)
-      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, starMat);
-      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, starMat);
-      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, starMat);
-    }
-    
-    // Scale only affects largeness
-    glScalef(sceneObj.size, sceneObj.size, sceneObj.size);
-    glRotatef(sceneObj.rotation, 0, 1, 0);
-    
-    displayObj(sceneSystem.v.at(i).out_vertices, sceneSystem.v.at(i).out_normals, 
-              sceneSystem.v.at(i).out_uvs, sceneSystem.v.at(i).vertexIndices.size());
+      glTranslatef(pos.mX, pos.mY, pos.mZ);
+
+      if (sceneObj.type == 0) {
+        // Cloud: white translucent (0.5)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, cloudMat);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, cloudMat);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, cloudMat);
+      } else if (sceneObj.type == 1) {
+        // Star: Yellow translucent (0.75)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, starMat);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, starMat);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, starMat);
+      }
+      
+      // Scale only affects largeness
+      glScalef(sceneObj.size, sceneObj.size, sceneObj.size);
+      glRotatef(sceneObj.rotation, 0, 1, 0);
+      
+      displayObj(sceneSystem.v.at(i).out_vertices, sceneSystem.v.at(i).out_normals, 
+                sceneSystem.v.at(i).out_uvs, sceneSystem.v.at(i).vertexIndices.size());
     glPopMatrix();
 
     // Reset back to default material
@@ -421,8 +419,8 @@ void drawObstacles(ObstacleSystem obstacleSystem) {
     Obstacle obstacle = obstacleSystem.v.at(i);
     glPushMatrix();
       glTranslatef(obstacle.position.mX,
-            obstacle.position.mY,
-            obstacle.position.mZ);
+                   obstacle.position.mY,
+                   obstacle.position.mZ);
       if (obstacle.type == 1) {
         glBindTexture(GL_TEXTURE_2D, texture_map[4]);
       } else {
@@ -451,12 +449,12 @@ void drawParticles(std::vector<Particle> v) {
   if (v.size() > 0) {
     for (Particle p: v) {
       glPushMatrix();
-      glColor3f(p.r, p.g, p.b);
+        glColor3f(p.r, p.g, p.b);
 
-      glTranslatef(p.position.mX, p.position.mY, p.position.mZ);
+        glTranslatef(p.position.mX, p.position.mY, p.position.mZ);
 
-      glScalef(0.05, 0.05, 0.05);
-      glutSolidCube(p.size);
+        glScalef(0.05, 0.05, 0.05);
+        glutSolidCube(p.size);
       glPopMatrix();
     }
   }
@@ -471,8 +469,8 @@ void drawParticles(std::vector<Particle> v) {
  */
 void drawText(std::string text) {
   for (std::string::iterator i = text.begin(); i != text.end(); ++i) {
-	char c = *i;
-	glutBitmapCharacter(font, c);
+    char c = *i;
+    glutBitmapCharacter(font, c);
   }
 }
 
@@ -480,255 +478,253 @@ void drawText(std::string text) {
 void drawPreviousMaxScoreIndicatorLine() {
   // only display the indicator line if there are existing records from the previous plays
   if (prevMaxForwardingDistance > 0) {
-	glColor3f(255, 255, 255);
-	glBegin(GL_LINES);
-	glVertex3f(0.1, prevMaxForwardingDistance, -5);
-	glVertex3f(0.1, prevMaxForwardingDistance, 5);
-	glEnd();
+    glColor3f(255, 255, 255);
+    glBegin(GL_LINES);
+    glVertex3f(0.1, prevMaxForwardingDistance, -5);
+    glVertex3f(0.1, prevMaxForwardingDistance, 5);
+    glEnd();
   }
 }
 
 void display(void) {
   if (screen == game) { //If state of screen is on game, draw the game
+    //calculate background colour based on forward distance * base value
+    //base value is determined by 1/500 meaning that at 500 forward distance the background is black (space).
+    glClearColor(0.4 - (rocket.forwardDistance * 0.002), 0.79 - (rocket.forwardDistance * 0.002), 1 - (rocket.forwardDistance * 0.002), 1);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
 
-	//calculate background colour based on forward distance * base value
-	//base value is determined by 1/250 meaning that at 250 forward distance the background is black (space).
-  glClearColor(0.4 - (rocket.forwardDistance * 0.002), 0.79 - (rocket.forwardDistance * 0.002), 1 - (rocket.forwardDistance * 0.002), 1);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+    //defining light properties
+    glLightfv(GL_LIGHT0, GL_POSITION, position);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 
-	//defining light properties
-	glLightfv(GL_LIGHT0, GL_POSITION, position);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
-
-	//For testing
-	if (cameraToggle) {
-	  gluLookAt(7,
-				rocket.position.mY + rocket.forwardDistance,
-				rocket.position.mZ,
-				rocket.position.mX,
-				rocket.position.mY + rocket.forwardDistance,
-				rocket.position.mZ,
-				0,
-				1,
-				0);
-	  //gluLookAt(4, 4,4, 0,0,0, 0, 1, 0);
-	} else {
-	  gluLookAt(0, -8 + rocket.forwardDistance, rocket.position.mZ, 
-              0, rocket.forwardDistance, 0, 
-              1, 0, 0);
-	}
-
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-
-	//Visualization of where the lightsource is
-	glPushMatrix();
-	glTranslatef(position[0], position[1] + rocket.forwardDistance, 0);
-	glutSolidSphere(0.1, 10, 10);
-	glPopMatrix();
-
-	drawRocket(rocket);
-	drawObstacles(obstacleSystem);
-	drawCoins(coinSystem);
-  drawScenery(sceneSystem);
-
-  //https://stackoverflow.com/questions/327043/how-to-apply-texture-to-glutsolidcube
-	glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube (particles)
-	glEnable(GL_TEXTURE_GEN_T);
-	drawParticles(rocketFlame.v);
-	drawParticles(explosion);
-
-	//Drawing moon at y=moonLocation and only if rocket is near
-	if (!infinite && rocket.forwardDistance > moonLocation - 30) {
-		glPushMatrix();
-			glBindTexture(GL_TEXTURE_2D, texture_map[3]);
-			glTranslatef(0, moonLocation, 0);
-			glutSolidSphere(3,10,10);
-			glBindTexture(GL_TEXTURE_2D, 0);
-		glPopMatrix();
-	}
-
-  //Draw ray
-	glBegin(GL_LINES);
-	glVertex3f(m_start[0], m_start[1], m_start[2]);
-	glVertex3f(m_end[0], m_end[1], m_end[2]);
-	glEnd();
-
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
-
-	drawPreviousMaxScoreIndicatorLine();
-
-
-	//set materials back to default
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-
-	/**
-	* Displays Text
-	* Source: https://stackoverflow.com/questions/18847109/displaying-fixed-location-2d-text-in-a-3d-opengl-world-using-glut
-	* Explanation: http://www.lighthouse3d.com/tutorials/glut-tutorial/bitmap-fonts-and-orthogonal-projections/
-	*
-	*/
-	//Display Text
-	glColor3f(1, 1, 1); //Text is white
-	glMatrixMode(GL_PROJECTION); //Setting matrix to projection so we can specify position of text in pixels
-
-	glPushMatrix(); //Pushing matrix on top of stack (saving previous display)
-	glLoadIdentity();
-	gluOrtho2D(0.0, viewportWidth, 0.0, viewportHeight);
-	glMatrixMode(GL_MODELVIEW);
-
-	//Display Fuel
-	glPushMatrix();
-	glLoadIdentity();
-  	//set colour to white
-	glColor3f(1, 1, 1);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[2]);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[2]);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[2]);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-
-  glBindTexture(GL_TEXTURE_2D, 0);
-
-	glRasterPos2i(10, 10);
-	std::string fuelDisplay = "Fuel: " + std::to_string(rocket.fuel);
-	drawText(fuelDisplay);
-
-  	//Display amount of coins
-	glColor3f(1, 1, 1);
-	glRasterPos2i(10, 580);
-	std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
-	drawText(coinDisplay);
-
-	//If an obstacle has been hit, display affect to fuel amount
-	if (obstacleHit) {
-	  	glColor3f(1, 0, 0);
-    	//set colour to red
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[0]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[0]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[0]);
-		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-	  	glRasterPos2i(150, 10);
-	  	drawText("-20");
-	}
-
-	//If a coin has been collected, display affect to coin amount
-	if (coinGet) {
-		glColor3f(0, 1, 0);
-		//set colour to green
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[1]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[1]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[1]);
-		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-		glRasterPos2i(110, 580);
-		drawText("+100");
-	}
-	// If the previous record has been broken, display the text to the user on the game screen
-	if (breakRecord) {
-	  glColor3f(1, 0, 0);
-	  glRasterPos2i(90, 560);
-    if (recordDisappearTime > 0) {
-	    drawText("Congrats! You are setting a new game record!");
+    //For testing
+    if (cameraToggle) {
+      gluLookAt(7,
+          rocket.position.mY + rocket.forwardDistance,
+          rocket.position.mZ,
+          rocket.position.mX,
+          rocket.position.mY + rocket.forwardDistance,
+          rocket.position.mZ,
+          0,
+          1,
+          0);
+    } else {
+      gluLookAt(0, -8 + rocket.forwardDistance, rocket.position.mZ, 
+                0, rocket.forwardDistance, 0, 
+                1, 0, 0);
     }
-	}
 
-	//Undoing changes to display
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
 
-	glutSwapBuffers();
+    //Visualization of where the lightsource is
+    // glPushMatrix();
+    // glTranslatef(position[0], position[1] + rocket.forwardDistance, 0);
+    // glutSolidSphere(0.1, 10, 10);
+    // glPopMatrix();
+
+    drawRocket(rocket);
+    drawObstacles(obstacleSystem);
+    drawCoins(coinSystem);
+    drawScenery(sceneSystem);
+
+    //https://stackoverflow.com/questions/327043/how-to-apply-texture-to-glutsolidcube
+    glEnable(GL_TEXTURE_GEN_S); //this lets us apply texture to glutsolidcube (particles)
+    glEnable(GL_TEXTURE_GEN_T);
+    drawParticles(rocketFlame.v);
+    drawParticles(explosion);
+
+    //Drawing moon at y=moonLocation and only if rocket is near
+    if (!infinite && rocket.forwardDistance > moonLocation - 30) {
+      glPushMatrix();
+        glBindTexture(GL_TEXTURE_2D, texture_map[3]);
+        glTranslatef(0, moonLocation, 0);
+        glutSolidSphere(3,10,10);
+        glBindTexture(GL_TEXTURE_2D, 0);
+      glPopMatrix();
+    }
+
+    //Draw ray
+    glBegin(GL_LINES);
+    glVertex3f(m_start[0], m_start[1], m_start[2]);
+    glVertex3f(m_end[0], m_end[1], m_end[2]);
+    glEnd();
+
+    glDisable(GL_TEXTURE_GEN_S);
+    glDisable(GL_TEXTURE_GEN_T);
+
+    drawPreviousMaxScoreIndicatorLine();
+
+
+    //set materials back to default
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseDefault);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularDefault);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+
+    /**
+    * Displays Text
+    * Source: https://stackoverflow.com/questions/18847109/displaying-fixed-location-2d-text-in-a-3d-opengl-world-using-glut
+    * Explanation: http://www.lighthouse3d.com/tutorials/glut-tutorial/bitmap-fonts-and-orthogonal-projections/
+    *
+    */
+    //Display Text
+    glColor3f(1, 1, 1); //Text is white
+    glMatrixMode(GL_PROJECTION); //Setting matrix to projection so we can specify position of text in pixels
+
+    glPushMatrix(); //Pushing matrix on top of stack (saving previous display)
+    glLoadIdentity();
+    gluOrtho2D(0.0, viewportWidth, 0.0, viewportHeight);
+    glMatrixMode(GL_MODELVIEW);
+
+    //Display Fuel
+    glPushMatrix();
+    glLoadIdentity();
+    //set colour to white
+    glColor3f(1, 1, 1);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[2]);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[2]);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[2]);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glRasterPos2i(10, 10);
+    std::string fuelDisplay = "Fuel: " + std::to_string(rocket.fuel);
+    drawText(fuelDisplay);
+
+    //Display amount of coins
+    glColor3f(1, 1, 1);
+    glRasterPos2i(10, 580);
+    std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
+    drawText(coinDisplay);
+
+    //If an obstacle has been hit, display affect to fuel amount
+    if (obstacleHit) {
+      glColor3f(1, 0, 0);
+      //set colour to red
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[0]);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[0]);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[0]);
+      glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+      glRasterPos2i(150, 10);
+      drawText("-20");
+    }
+
+    //If a coin has been collected, display affect to coin amount
+    if (coinGet) {
+      glColor3f(0, 1, 0);
+      //set colour to green
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, textAmb[1]);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, textDiff[1]);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, textSpec[1]);
+      glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+      glRasterPos2i(110, 580);
+      drawText("+100");
+    }
+    // If the previous record has been broken, display the text to the user on the game screen
+    if (breakRecord) {
+      glColor3f(1, 0, 0);
+      glRasterPos2i(90, 560);
+      if (recordDisappearTime > 0) {
+        drawText("Congrats! You are setting a new game record!");
+      }
+    }
+
+    //Undoing changes to display
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+
+    glutSwapBuffers();
   } else if (screen == menu) { //if state of screen is on menu, draw the menu
   	glClearColor(0, 0, 0, 1); //change background to black
-	glBindTexture(GL_TEXTURE_2D, 0); // reset texture here so that shop page won't be affected by our other textures
-	glDisable(GL_LIGHTING); //disable lights
-	glDisable(GL_LIGHT0);
+    glBindTexture(GL_TEXTURE_2D, 0); // reset texture here so that shop page won't be affected by our other textures
+    glDisable(GL_LIGHTING); //disable lights
+    glDisable(GL_LIGHT0);
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	gluOrtho2D(0.0, viewportWidth, 0.0, viewportHeight);
-	glMatrixMode(GL_MODELVIEW);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0.0, viewportWidth, 0.0, viewportHeight);
+    glMatrixMode(GL_MODELVIEW);
 
-	glPushMatrix();
-	glLoadIdentity();
+    glPushMatrix();
+    glLoadIdentity();
 
-	//https://stackoverflow.com/questions/15983607/opengl-texture-tilted
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //images would appear slanted without this
+    //https://stackoverflow.com/questions/15983607/opengl-texture-tilted
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //images would appear slanted without this
 
-	//Drawing UI
-	gas.draw(0,300);
-	speed.draw(290, 300);
-	turning.draw(0,100);
+    //Drawing UI
+    gas.draw(0,300);
+    speed.draw(290, 300);
+    turning.draw(0,100);
 
-	glColor3f(1, 1, 1);
-	glRasterPos2i(10, 580);
-	std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
-	drawText(coinDisplay);
+    glColor3f(1, 1, 1);
+    glRasterPos2i(10, 580);
+    std::string coinDisplay = "Coins: " + std::to_string(rocket.coins);
+    drawText(coinDisplay);
 
-	std::string scoreDisplay = "    Max Score: " + std::to_string(maxForwardingDistance);
-	prevMaxForwardingDistance = maxForwardingDistance;
-	drawText(scoreDisplay);
+    std::string scoreDisplay = "    Max Score: " + std::to_string(maxForwardingDistance);
+    prevMaxForwardingDistance = maxForwardingDistance;
+    drawText(scoreDisplay);
 
-	glRasterPos2i(200, 10);
-	drawText("Press Space Bar to play");
+    glRasterPos2i(200, 10);
+    drawText("Press Space Bar to play");
 
 
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 
-	glutSwapBuffers();
+    glutSwapBuffers();
   }
   else if (screen == win) {
-	glClearColor(0, 0, 0, 1); //change background to black
-	glDisable(GL_LIGHTING); //disable lights
-	glDisable(GL_LIGHT0);
+    glClearColor(0, 0, 0, 1); //change background to black
+    glDisable(GL_LIGHTING); //disable lights
+    glDisable(GL_LIGHT0);
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	gluOrtho2D(0.0, viewportWidth, 0.0, viewportHeight);
-	glMatrixMode(GL_MODELVIEW);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0.0, viewportWidth, 0.0, viewportHeight);
+    glMatrixMode(GL_MODELVIEW);
 
-	glPushMatrix();
-	glLoadIdentity();
+    glPushMatrix();
+    glLoadIdentity();
 
-	glColor3f(1, 1, 1);
+    glColor3f(1, 1, 1);
 
-	glRasterPos2i(260, 340);
-	drawText("You Win!");
+    glRasterPos2i(260, 340);
+    drawText("You Win!");
 
-	glRasterPos2i(150, 300);
-	drawText("Press Space Bar to continue playing!");
+    glRasterPos2i(150, 300);
+    drawText("Press Space Bar to continue playing!");
 
-	glRasterPos2i(210, 260);
-	drawText("Press Escape to Quit");
+    glRasterPos2i(210, 260);
+    drawText("Press Escape to Quit");
 
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 
-	glutSwapBuffers();
+    glutSwapBuffers();
   }
 }
 
@@ -757,12 +753,12 @@ void keyboard(unsigned char key, int x, int y) {
 
       case 'A':
       case 'a':
-      //Turn the rocket left and rotates
-      if (rocket.zOffset < 4.5) {
-        rocket.zOffset += rocket.turningSpeed;
-        rocket.angle += 0.5;
-      }
-      break;
+        //Turn the rocket left and rotates
+        if (rocket.zOffset < 4.5) {
+          rocket.zOffset += rocket.turningSpeed;
+          rocket.angle += 0.5;
+        }
+        break;
 
       case 'D':
       case 'd':
@@ -777,6 +773,7 @@ void keyboard(unsigned char key, int x, int y) {
       case 'v':
         cameraToggle = !cameraToggle;
         break;
+
       case 'P':
       case 'p':
         paused = !paused;
@@ -829,7 +826,7 @@ void keyboard(unsigned char key, int x, int y) {
         infinite = true;
         rocket.forwardDistance = 0;
         rocket.zOffset = 0;
-          rocket.xOffset = 0;
+        rocket.xOffset = 0;
         rocket.fuel = rocket.initialFuel + rocket.fuelUpgrades;
         rocket.angle = 0;
         rocketFlame.origin.mY = -5.40;
@@ -853,14 +850,16 @@ void keyboard(unsigned char key, int x, int y) {
 void populateRayTracingValues(int x, int y) {
   double matModelView[16], matProjection[16];
   int viewport[4];
+
   // get matrix and viewport:
   glGetDoublev(GL_MODELVIEW_MATRIX, matModelView);
   glGetDoublev(GL_PROJECTION_MATRIX, matProjection);
   glGetIntegerv(GL_VIEWPORT, viewport);
+
   // window pos of mouse, Y is inverted on Windows
   double winX = (double)x;
   double winY = viewport[3] - (double)y;
-  //std::cout << viewport[3] << std::endl;
+
   // get point on the 'near' plane (third param is set to 0.0)
   gluUnProject(winX, winY, 0.0, matModelView, matProjection,
 			   viewport, &m_start[0], &m_start[1], &m_start[2]);
@@ -875,17 +874,12 @@ float getRayIntersectionTimeSphere(int x, int y, int z, float boundingBoxSize) {
   double xDiff = m_end[0] - m_start[0];
   double yDiff = m_end[1] - m_start[1];
   double zDiff = m_end[2] - m_start[2];
-  //std::cout << "ray origin: " << m_start[0] << " " << m_start[1] << " " << m_start[2] << std::endl; 
-  //std::cout << "ray end: " << m_end[0] << " " << m_end[1] << " " << m_end[2] << std::endl; 
-
   double mag = sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
 
   R0 = m_start;
   Rd[0] = xDiff / mag;
   Rd[1] = yDiff / mag;
   Rd[2] = zDiff / mag;
-
-  //std::cout << "ray direction: " << Rd[0] << " " << Rd[1] << " " << Rd[2] << std::endl;
 
   double A = Rd[0] * Rd[0] + Rd[1] * Rd[1] + Rd[2] * Rd[2];
   double *R0Pc = new double[3];
@@ -898,7 +892,6 @@ float getRayIntersectionTimeSphere(int x, int y, int z, float boundingBoxSize) {
 	  - (boundingBoxSize * boundingBoxSize);
 
   double discriminant = B * B - 4 * A * C;
-  //std::cout << discriminant << "\n";
 
   if (discriminant < 0) {
     return -1;
@@ -906,7 +899,6 @@ float getRayIntersectionTimeSphere(int x, int y, int z, float boundingBoxSize) {
   else {
     double t0 = (-B + sqrt(discriminant)) / (2 * A);
     double t1 = (-B - sqrt(discriminant)) / (2 * A);
-    //printf("t0: %f , t1: %f \n", t0, t1);
     // return the time for the ray to reach the closest intersection point for comparsion
     return std::min(t0, t1);
   }
@@ -930,11 +922,7 @@ void mouse(int button, int state, int x, int y) {
           Obstacle obstacle = obstacleSystem.v.at(i);
           Point3D pos = obstacle.position;
           float intersectionTime =
-              getRayIntersectionTimeSphere(pos.mX, pos.mY, pos.mZ, 0.5);
-          //std::cout << "intersect time" << intersectionTime << std::endl;
-          //std::cout << "mouse: " << x << "," << y << std::endl;
-          //std::cout << "position: " << pos.mX << " " << pos.mY << " " << pos.mZ << std::endl;
-            // getRayIntersectionTimeSphere(x, y, getObstacleRadius());
+              getRayIntersectionTimeSphere(pos.mX, pos.mY, pos.mZ, 0.5); // obstacles have radius 0.5
           if (intersectionTime >= 0 && intersectionTime < closestIntersectionTime) {
             closestIntersectionTime = intersectionTime;
             closestObstacleIndex = i;
@@ -957,6 +945,7 @@ void gasIncrease() {
 	if (rocket.coins >= 100) {
 		rocket.coins -= 100;
 		rocket.fuelUpgrades += 100;
+    printf("Succesfully purchased fuel upgrade!\n");
 	}
 	else {
 		printf("Not enough coins. \n");
@@ -967,6 +956,7 @@ void speedIncrease() {
 	if (rocket.coins >= 100) {
 		rocket.coins -= 100;
 		rocket.forwardSpeed += 0.1;
+    printf("Succesfully purchased speed upgrade!\n");
 	}
 	else {
 		printf("Not enough coins. \n");
@@ -977,6 +967,7 @@ void turningIncrease() {
 	if (rocket.coins >= 100) {
 		rocket.coins -= 100;
 		rocket.turningSpeed += 0.1;
+    printf("Succesfully purchased handling upgrade!\n");
 	}
 	else {
 		printf("Not enough coins. \n");
@@ -984,79 +975,75 @@ void turningIncrease() {
 }
 
 Handler gasButton = {
-    30,
-    305,
-    510,
-    308,
-    gasIncrease
+  30,
+  305,
+  510,
+  308,
+  gasIncrease
 };
 
 Handler speedButton = {
-    320,
-    595,
-    510,
-    308,
-    speedIncrease
+  320,
+  595,
+  510,
+  308,
+  speedIncrease
 };
 
 Handler turningButton = {
-    30,
-    305,
-    310,
-    108,
-    turningIncrease
+  30,
+  305,
+  310,
+  108,
+  turningIncrease
 };
 
 void FPS(int val) {
   if (screen == game && !paused) {
-	rocket.update();
-	maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
-	// detect if the player reaches beyond previous max record
-	// this only occurs when there is an existing record
-	if ((rocket.forwardDistance > prevMaxForwardingDistance) && !breakRecord && (prevMaxForwardingDistance > 0)) {
-	  breakRecord = true;
-	}
-	coinSystem.update(rocket);
-	obstacleSystem.update(rocket, explosion, rocketFlame.v);
-	rocketFlame.update(rocket);
-  sceneSystem.update(rocket);
+    rocket.update();
+    maxForwardingDistance = std::max(maxForwardingDistance, rocket.forwardDistance);
+    // detect if the player reaches beyond previous max record
+    // this only occurs when there is an existing record
+    if ((rocket.forwardDistance > prevMaxForwardingDistance) && !breakRecord && (prevMaxForwardingDistance > 0)) {
+      breakRecord = true;
+    }
+    coinSystem.update(rocket);
+    obstacleSystem.update(rocket, explosion, rocketFlame.v);
+    rocketFlame.update(rocket);
+    sceneSystem.update(rocket);
 
-	if (rocket.fuel <= 0) {
-	  screen = menu;
+    if (rocket.fuel <= 0) {
+      screen = menu;
+    }
+    //If obstacle has been hit, decrement the amount of time the text stays on the screen
+    if (obstacleHit) {
+      obsHitAge -= 0.1;
+    }
+    //If text age is < 0 reset obstacle detection
+    if (obsHitAge < 0) {
+      obstacleHit = false;
+    }
+    //If coin has been hit, decrement the amount of time the text stays on the screen
+    if (coinGet) {
+      coinGetAge -= 0.1;
+    }
+    //If text age is < 0 reset coin detection
+    if (coinGetAge < 0) {
+      coinGet = false;
+    }
+    //Decrease amount of time to print the record breaking message
+    if (breakRecord && recordDisappearTime > 0) {
+      recordDisappearTime -= 1;
+    }
 
-	}
-	//If obstacle has been hit, decrement the amount of time the text stays on the screen
-	if (obstacleHit) {
-	  obsHitAge -= 0.1;
-	}
-	//If text age is < 0 reset obstacle detection
-	if (obsHitAge < 0) {
-	  obstacleHit = false;
-	}
-	//If coin has been hit, decrement the amount of time the text stays on the screen
-	if (coinGet) {
-	  coinGetAge -= 0.1;
-	}
-	//If text age is < 0 reset coin detection
-	if (coinGetAge < 0) {
-	  coinGet = false;
-	}
-
-  if (breakRecord && recordDisappearTime > 0) {
-    recordDisappearTime -= 1;
+    if (!infinite) {
+      if (inRangeX(3.15, -3.15, rocket)
+        && inRangeY(moonLocation + 3.15, moonLocation - 3.15, rocket)
+        && inRangeZ(3.15,-3.15, rocket)) {
+          screen = win;
+      }
+    }
   }
-
-	if (!infinite) {
-		if (inRangeX(3.15, -3.15, rocket)
-			&& inRangeY(moonLocation + 3.15, moonLocation - 3.15, rocket)
-			&& inRangeZ(3.15,-3.15, rocket)) {
-				screen = win;
-		}
-	}
-
-
-  }
-
   glutPostRedisplay();
   glutTimerFunc(17, FPS, 0);
 }
@@ -1071,7 +1058,7 @@ void reshape(int w, int h)
 	glMatrixMode(GL_MODELVIEW);
 	glViewport(0, 0, w, h);
 	viewportWidth = w;
-    viewportHeight = h;
+  viewportHeight = h;
 }
 
 void init(void) {
@@ -1079,8 +1066,8 @@ void init(void) {
   glColor3f(1, 1, 1);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  //glOrtho(-1, 1, -1, 1, -20, 20);
   gluPerspective(70, 1, 1, 20);
+
   rocket.loadRocketObj("./assets/rocket/rocket.obj");
   coinSystem.loadCoinObj("./assets/coin/coin.obj");
   obstacleSystem.loadObstacleObj("./assets/obstacle/obstacle.obj");
@@ -1088,7 +1075,6 @@ void init(void) {
   glEnable(GL_TEXTURE_2D);
   glGenTextures(5, texture_map);
 
-  // Temporarily using some ppms from lecture, will replace with proper textures later
   loadTexture("./assets/particle/fire.ppm", 0);
   loadTexture("./assets/obstacle/obstacle.ppm", 1);
   loadTexture("./assets/rocket/steel.ppm", 2);
@@ -1106,10 +1092,9 @@ void init(void) {
   glMatrixMode(GL_TEXTURE);
   glScalef(1, -1, -1);
 
-  // Enable blending for clouds
+  // Enable blending for clouds and stars
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 }
 
 /* main function - program entry point */

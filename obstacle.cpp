@@ -37,7 +37,7 @@ void ObstacleSystem::update(Rocket &r, std::vector<Particle>& particles, std::ve
       && inRangeZ(v.at(i).position.mZ + 0.65, v.at(i).position.mZ - 0.65, r)) {
 
       // regular obstacle will deduct rocket's fuel upon collision
-      if(v.at(i).type == 0) {
+      if (v.at(i).type == 0) {
         if (r.fuel > r.collisionFuelPenalty) {
           r.fuel -= r.collisionFuelPenalty;
         } else {
@@ -46,14 +46,13 @@ void ObstacleSystem::update(Rocket &r, std::vector<Particle>& particles, std::ve
         obstacleHit = true; //Tell game obstacle has been hit
         obsHitAge = 3; //Set time for text to display on screen
 
-      }else if(v.at(i).type == 1) {
+      } else if(v.at(i).type == 1) {
       // bomb obstacle: knock back the rocket but doesn't deduct fuel
         for (size_t j = 0; j < 50; j++) //add 50 particles to the explosion vector
         {
           Particle p = Particle();
           p.position = v.at(i).position;
           particles.push_back(p);
-          /* code */
         }
 
         rocketflame.clear(); //remove existing rocket flame particles because we send the rocket backwards
