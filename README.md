@@ -1,5 +1,7 @@
 A recreation of the flash game "Learn to Fly" using OpenGL.
 
+Use "make" to run and compile the program.
+
 # How to Play
 You are learning to fly with your rocket. Your goal is to reach the moon! Unfortunately, your rocket is too weak right now. Collect coins along the path to upgrade your rocket. Avoid the obstacles; red obstacles knock you back and black obstacles reduce your fuel by 20.
 
