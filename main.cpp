@@ -840,7 +840,7 @@ void keyboard(unsigned char key, int x, int y) {
         breakRecord = false;
         recordDisappearTime = 500;
 
-        screen = game;
+        screen = menu;
         break;
     }
   }
